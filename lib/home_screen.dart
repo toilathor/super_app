@@ -147,11 +147,31 @@ class _WebViewPageState extends State<WebViewPage> {
   late final WebViewController _controller;
   final int _port = 8080;
   HttpServer? server;
+  final String userToken = 'abc123xyz';
 
   @override
   void initState() {
     _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted);
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (url) {
+            _controller.addJavaScriptChannel(
+              'ToFlutter',
+              onMessageReceived: (JavaScriptMessage message) {
+                final data = message.message;
+
+                print("Received from Mini App: $data");
+              },
+            );
+          },
+        ),
+      )
+      ..setOnConsoleMessage(
+        (message) {
+          print("Console.log: ${message.message}");
+        },
+      );
     super.initState();
     _initWebApp();
   }
@@ -169,6 +189,13 @@ class _WebViewPageState extends State<WebViewPage> {
       appBar: AppBar(title: Text("Mini app: ${widget.appName}")),
       body: WebViewWidget(
         controller: _controller,
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          final script = "window.postMessage({token: '$userToken'}, '*');";
+          _controller.runJavaScript(script);
+        },
       ),
     );
   }
