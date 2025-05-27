@@ -230,6 +230,13 @@ class _WebViewPageState extends State<WebViewPage> {
         widget.folder ?? await prepareWebAssets(widget.appName ?? "");
     server = await startLocalWebServer(webFolder, _port);
     _controller.loadRequest(Uri.parse('http://localhost:$_port'));
+    _controller
+      ..setBackgroundColor(Colors.white)
+      ..platform.setOnPlatformPermissionRequest(
+        (request) {
+          request.grant();
+        },
+      );
   }
 
   @override
