@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -18,5 +20,14 @@ class AppHelper {
     );
 
     return savePath;
+  }
+
+  static Future<void> deleteDirectory(String deletePath) {
+    final directory = Directory(deletePath);
+    if (directory.existsSync()) {
+      return directory.delete(recursive: true);
+    } else {
+      return Future.value();
+    }
   }
 }
