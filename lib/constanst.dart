@@ -5,12 +5,16 @@ class AppConstant {
     MiniApp(
       id: "1",
       name: "app1",
-      link: "https://raw.githubusercontent.com/toilathor/store_mini_app/refs/heads/master/app1.zip",
+      link:
+          "https://raw.githubusercontent.com/toilathor/store_mini_app/refs/heads/master/app1.zip",
+      isEnable: true,
     ),
     MiniApp(
       id: "2",
       name: "app2",
-      link: "https://raw.githubusercontent.com/toilathor/store_mini_app/refs/heads/master/app2.zip",
+      link:
+          "https://raw.githubusercontent.com/toilathor/store_mini_app/refs/heads/master/app2.zip",
+      isEnable: false,
     ),
   ];
 

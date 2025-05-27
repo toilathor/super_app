@@ -19,6 +19,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final Map<MiniApp, bool> apps = {};
 
+  bool isLoading = false;
+
   @override
   void initState() {
     super.initState();
@@ -31,62 +33,85 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(),
-      body: ListView.builder(
-        itemCount: apps.length,
-        itemBuilder: (_, int index) {
-          return ListTile(
-            onTap: () async {
-              if (apps.values.elementAt(index)) {
-                final dirDoc = await getApplicationDocumentsDirectory();
-                final dirMiniApps = "${dirDoc.path}/${AppConstant.folderApps}";
-                final appDir =
-                    '$dirMiniApps/${apps.keys.elementAt(index).name}';
+      body: Stack(
+        children: [
+          ListView.builder(
+            itemCount: apps.length,
+            itemBuilder: (_, int index) {
+              return apps.keys.elementAt(index).isEnable
+                  ? ListTile(
+                      onTap: () async {
+                        if (apps.values.elementAt(index)) {
+                          final dirDoc =
+                              await getApplicationDocumentsDirectory();
+                          final dirMiniApps =
+                              "${dirDoc.path}/${AppConstant.folderApps}";
+                          final appDir =
+                              '$dirMiniApps/${apps.keys.elementAt(index).name}';
 
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => WebViewPage(
-                      appName: apps.keys.elementAt(index).name,
-                      folder: appDir,
-                    ),
-                  ),
-                );
-              }
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => WebViewPage(
+                                appName: apps.keys.elementAt(index).name,
+                                folder: appDir,
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      title: Text(apps.keys.elementAt(index).name),
+                      leading: FlutterLogo(),
+                      trailing: apps.values.elementAt(index)
+                          ? GestureDetector(
+                              child: Icon(Icons.remove_circle,
+                                  color: Colors.black26),
+                            )
+                          : GestureDetector(
+                              child:
+                                  Icon(Icons.download, color: Colors.black26),
+                              onTap: () => _downloadApp(
+                                apps.keys.elementAt(index).link,
+                                apps.keys.elementAt(index).name,
+                              ),
+                            ),
+                    )
+                  : SizedBox();
             },
-            title: Text(apps.keys.elementAt(index).name),
-            leading: FlutterLogo(),
-            trailing: apps.values.elementAt(index)
-                ? GestureDetector(
-                    child: Icon(Icons.remove_circle, color: Colors.black26),
-                  )
-                : GestureDetector(
-                    child: Icon(Icons.download, color: Colors.black26),
-                    onTap: () => _downloadApp(
-                      apps.keys.elementAt(index).link,
-                      apps.keys.elementAt(index).name,
-                    ),
-                  ),
-          );
-        },
+          ),
+          if (isLoading) Center(child: CircularProgressIndicator()),
+        ],
       ),
     );
   }
 
   Future<void> _initApps() async {
+    setState(() {
+      isLoading = true;
+    });
     final dirDoc = await getApplicationDocumentsDirectory();
-    final dirMiniApps = dirDoc.path + AppConstant.folderApps;
+    final dirMiniApps = "${dirDoc.path}/${AppConstant.folderApps}";
 
     for (final app in AppConstant.apps) {
       final appDir = '$dirMiniApps/${app.name}';
       final appExists = await Directory(appDir).exists();
       if (appExists) {
         apps[app] = true;
+        if (!app.isEnable) {
+          await AppHelper.deleteDirectory(appDir);
+        }
       } else {
         apps[app] = false;
+        if (app.isEnable) {
+          await _downloadApp(app.link, app.name);
+        }
       }
     }
 
-    setState(() {});
+    setState(() {
+      isLoading = false;
+      apps.removeWhere((key, value) => !value);
+    });
   }
 
   Future<void> _downloadApp(String link, String name) async {
