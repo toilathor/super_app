@@ -1,0 +1,2 @@
+/Users/phamphi/Desktop/Vietin/super_app/android/app/.cxx/Debug/34411n1m/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/phamphi/Desktop/Vietin/super_app/android/app/.cxx/Debug/34411n1m/armeabi-v7a/CMakeFiles/rebuild_cache.dir
