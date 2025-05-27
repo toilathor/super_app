@@ -1,0 +1,156 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_super_app/constanst.dart';
+import 'package:flutter_super_app/helper.dart';
+import 'package:flutter_super_app/local_server.dart';
+import 'package:flutter_super_app/mini_app.dart';
+import 'package:flutter_super_app/zip_service.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final Map<MiniApp, bool> apps = {};
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initApps();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: ListView.builder(
+        itemCount: apps.length,
+        itemBuilder: (_, int index) {
+          return ListTile(
+            onTap: () async {
+              if (apps.values.elementAt(index)) {
+                final dirDoc = await getApplicationDocumentsDirectory();
+                final dirMiniApps = "${dirDoc.path}/${AppConstant.folderApps}";
+                final appDir =
+                    '$dirMiniApps/${apps.keys.elementAt(index).name}';
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => WebViewPage(
+                      appName: apps.keys.elementAt(index).name,
+                      folder: appDir,
+                    ),
+                  ),
+                );
+              }
+            },
+            title: Text(apps.keys.elementAt(index).name),
+            leading: FlutterLogo(),
+            trailing: apps.values.elementAt(index)
+                ? GestureDetector(
+                    child: Icon(Icons.remove_circle, color: Colors.black26),
+                  )
+                : GestureDetector(
+                    child: Icon(Icons.download, color: Colors.black26),
+                    onTap: () => _downloadApp(
+                      apps.keys.elementAt(index).link,
+                      apps.keys.elementAt(index).name,
+                    ),
+                  ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _initApps() async {
+    final dirDoc = await getApplicationDocumentsDirectory();
+    final dirMiniApps = dirDoc.path + AppConstant.folderApps;
+
+    for (final app in AppConstant.apps) {
+      final appDir = '$dirMiniApps/${app.name}';
+      final appExists = await Directory(appDir).exists();
+      if (appExists) {
+        apps[app] = true;
+      } else {
+        apps[app] = false;
+      }
+    }
+
+    setState(() {});
+  }
+
+  Future<void> _downloadApp(String link, String name) async {
+    final pathDownload = await AppHelper.downloadWithDio(
+      link,
+      "$name.zip",
+    );
+    if (pathDownload != null) {
+      setState(() {
+        apps[AppConstant.apps.firstWhere((element) => element.name == name)] =
+            true;
+      });
+
+      await ZipService.extractZip(
+        pathDownload,
+        onZipSuccess: (path) {},
+      );
+    }
+  }
+}
+
+class WebViewPage extends StatefulWidget {
+  final String? appName;
+  final String? folder;
+
+  const WebViewPage({super.key, this.appName, this.folder});
+
+  @override
+  State<WebViewPage> createState() => _WebViewPageState();
+}
+
+class _WebViewPageState extends State<WebViewPage> {
+  late final WebViewController _controller;
+  final int _port = 8080;
+  HttpServer? server;
+
+  @override
+  void initState() {
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted);
+    super.initState();
+    _initWebApp();
+  }
+
+  Future<void> _initWebApp() async {
+    final webFolder =
+        widget.folder ?? await prepareWebAssets(widget.appName ?? "");
+    server = await startLocalWebServer(webFolder, _port);
+    _controller.loadRequest(Uri.parse('http://localhost:$_port'));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Mini app: ${widget.appName}")),
+      body: WebViewWidget(
+        controller: _controller,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    server?.close(force: true);
+  }
+}
