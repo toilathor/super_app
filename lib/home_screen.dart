@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_super_app/constanst.dart';
 import 'package:flutter_super_app/helper.dart';
 import 'package:flutter_super_app/local_server.dart';
@@ -115,21 +117,68 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _downloadApp(String link, String name) async {
-    final pathDownload = await AppHelper.downloadWithDio(
-      link,
-      "$name.zip",
+    final token = RootIsolateToken.instance;
+    if (token == null) {
+      print("Cannot get the RootIsolateToken");
+      return;
+    }
+    final receivePort = ReceivePort();
+
+    await Isolate.spawn(
+      _downloadAndExtract,
+      _DownloadMessage(
+        link: link,
+        name: name,
+        sendPort: receivePort.sendPort,
+        token: token,
+      ),
     );
-    if (pathDownload != null) {
+
+    final result = await receivePort.first as bool;
+    if (result) {
       setState(() {
         apps[AppConstant.apps.firstWhere((element) => element.name == name)] =
             true;
       });
+    }
+  }
+}
 
+class _DownloadMessage {
+  final String link;
+  final String name;
+  final SendPort sendPort;
+  final RootIsolateToken token;
+
+  _DownloadMessage({
+    required this.link,
+    required this.name,
+    required this.sendPort,
+    required this.token,
+  });
+}
+
+final token = RootIsolateToken.instance;
+
+Future<void> _downloadAndExtract(_DownloadMessage message) async {
+  BackgroundIsolateBinaryMessenger.ensureInitialized(message.token);
+  try {
+    final pathDownload = await AppHelper.downloadWithDio(
+      message.link,
+      "${message.name}.zip",
+    );
+
+    if (pathDownload != null) {
       await ZipService.extractZip(
         pathDownload,
         onZipSuccess: (path) {},
       );
+      message.sendPort.send(true);
+    } else {
+      message.sendPort.send(false);
     }
+  } catch (e) {
+    message.sendPort.send(false);
   }
 }
 
