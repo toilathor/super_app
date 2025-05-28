@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
@@ -101,6 +102,23 @@ class _HomeScreenState extends State<HomeScreen> {
         apps[app] = true;
         if (!app.isEnable) {
           await AppHelper.deleteDirectory(appDir);
+        } else {
+          final versionFile = File('$appDir/version.json');
+          if (await versionFile.exists()) {
+            final versionContent = await versionFile.readAsString();
+            final versionData =
+                versionContent.isNotEmpty ? jsonDecode(versionContent) : null;
+            final currentVersion = versionData["version"] ?? "";
+            final versionSplit = currentVersion.split('.');
+            final version = versionSplit.isNotEmpty
+                ? int.parse(versionSplit[0]) +
+                    int.parse(versionSplit[1]) +
+                    int.parse(versionSplit[2])
+                : 0;
+            if (version > app.version) {
+              await _downloadApp(app.link, app.name);
+            }
+          }
         }
       } else {
         apps[app] = false;

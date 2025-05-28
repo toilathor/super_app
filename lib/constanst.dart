@@ -8,6 +8,8 @@ class AppConstant {
       link:
           "https://raw.githubusercontent.com/toilathor/store_mini_app/refs/heads/master/app1.zip",
       isEnable: true,
+      currentVersion: 2,
+      version: 0,
     ),
     MiniApp(
       id: "2",
@@ -15,6 +17,8 @@ class AppConstant {
       link:
           "https://raw.githubusercontent.com/toilathor/store_mini_app/refs/heads/master/app2.zip",
       isEnable: false,
+      currentVersion: 1,
+      version: 1,
     ),
   ];
 
