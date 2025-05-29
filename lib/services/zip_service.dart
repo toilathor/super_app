@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_super_app/constanst.dart';
+import 'package:flutter_super_app/core/constanst.dart';
 import 'package:path_provider/path_provider.dart';
 
 class ZipService {
@@ -30,6 +30,7 @@ class ZipService {
       }
 
       onZipSuccess.call(extractPath);
+      File(zipPath).deleteSync(recursive: true);
 
       return extractPath;
     } catch (e) {
