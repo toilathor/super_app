@@ -9,7 +9,7 @@ class AppConstant {
           "https://raw.githubusercontent.com/toilathor/store_mini_app/refs/heads/master/app1.zip",
       isEnable: true,
       currentVersion: 2,
-      version: 0,
+      version: 2,
     ),
     MiniApp(
       id: "2",
