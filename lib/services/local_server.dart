@@ -1,36 +1,8 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/services.dart';
-import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_static/shelf_static.dart';
-
-Future<String> prepareWebAssets(String appName) async {
-  final tempDir =
-      await Directory.systemTemp.createTemp('flutter_web_assets_$appName');
-  final assetBasePath = 'assets/$appName/';
-
-  final manifestContent = await rootBundle.loadString('AssetManifest.json');
-  final Map<String, dynamic> manifestMap = jsonDecode(manifestContent);
-
-  for (final entry in manifestMap.entries) {
-    final String assetPath = entry.key;
-
-    if (assetPath.startsWith(assetBasePath) &&
-        !assetPath.contains('.DS_Store') &&
-        !assetPath.contains('.last_build_id')) {
-      final data = await rootBundle.load(assetPath);
-      final relativePath = assetPath.replaceFirst(assetBasePath, '');
-      final file = File(p.join(tempDir.path, relativePath));
-      await file.parent.create(recursive: true);
-      await file.writeAsBytes(data.buffer.asUint8List());
-    }
-  }
-
-  return tempDir.path;
-}
 
 /// Start a static server from the copied web assets
 Future<HttpServer> startLocalWebServer(
@@ -44,19 +16,59 @@ Future<HttpServer> startLocalWebServer(
     serveFilesOutsidePath: false,
   );
 
-  final pipeline = Pipeline().addMiddleware(
-    (Handler innerHandler) {
-      return (Request request) async {
-        final token = request.headers['X-Internal-Token'];
-        if (token != validToken) {
-          return Response.forbidden('Access Denied');
-        }
-        return innerHandler(request);
-      };
-    },
-  ).addHandler(handler);
+  final pipeline = Pipeline()
+    ..addMiddleware(_checkToken(validToken))
+    ..addMiddleware(_fixMimeAnd403());
 
-  final server = await shelf_io.serve(pipeline, 'localhost', port);
+  final server =
+      await shelf_io.serve(pipeline.addHandler(handler), 'localhost', port);
+
   print('Serving at http://localhost:$port');
   return server;
+}
+
+Middleware _checkToken(String validToken) {
+  return (innerHandler) {
+    return (request) async {
+      final token = request.headers['X-Internal-Token'];
+      if (token != validToken) {
+        return Response.forbidden('Access Denied');
+      }
+      return innerHandler(request);
+    };
+  };
+}
+
+Middleware _fixMimeAnd403() {
+  return (innerHandler) {
+    return (request) async {
+      final response = await innerHandler(request);
+
+      // Nếu 403 thì trả lại 404 hoặc sửa lại header
+      if (response.statusCode == 403 || response.statusCode == 404) {
+        final path = request.requestedUri.path;
+
+        if (path.endsWith(".js")) {
+          final file = File("miniapp$path");
+          if (await file.exists()) {
+            final jsContent = await file.readAsString();
+            return Response.ok(jsContent, headers: {
+              'Content-Type': 'application/javascript',
+            });
+          }
+        }
+      }
+
+      // Fix MIME
+      final path = request.requestedUri.path;
+      if (path.endsWith(".js")) {
+        return response.change(headers: {
+          ...response.headers,
+          "Content-Type": "application/javascript"
+        });
+      }
+
+      return response;
+    };
+  };
 }

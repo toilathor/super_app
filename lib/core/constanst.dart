@@ -18,7 +18,7 @@ class AppConstant {
       name: "app2",
       link:
           "https://raw.githubusercontent.com/toilathor/store_mini_app/refs/heads/master/app2.zip",
-      isEnable: false,
+      isEnable: true,
       currentVersion: 1,
       version: 1,
     ),

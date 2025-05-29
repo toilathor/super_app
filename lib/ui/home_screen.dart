@@ -7,12 +7,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_super_app/core/constanst.dart';
 import 'package:flutter_super_app/core/helper.dart';
 import 'package:flutter_super_app/models/mini_app.dart';
-import 'package:flutter_super_app/services/local_server.dart';
 import 'package:flutter_super_app/services/zip_service.dart';
 import 'package:flutter_super_app/ui/inapp_webview_screen.dart';
 import 'package:flutter_super_app/utils.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -204,19 +202,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                       title: Text(apps.keys.elementAt(index).name),
                       leading: FlutterLogo(),
-                      trailing: apps.values.elementAt(index)
-                          ? GestureDetector(
-                              child: Icon(Icons.remove_circle,
-                                  color: Colors.black26),
-                            )
-                          : GestureDetector(
-                              child:
-                                  Icon(Icons.download, color: Colors.black26),
-                              onTap: () => _downloadApp(
-                                apps.keys.elementAt(index).link,
-                                apps.keys.elementAt(index).name,
-                              ),
-                            ),
                     )
                   : SizedBox();
             },
@@ -340,97 +325,5 @@ Future<void> _downloadAndExtract(_DownloadMessage message) async {
     }
   } catch (e) {
     message.sendPort.send(false);
-  }
-}
-
-class WebViewPage extends StatefulWidget {
-  final String? appName;
-  final String? folder;
-  final List<String> listPermissions;
-
-  const WebViewPage({
-    super.key,
-    this.appName,
-    this.folder,
-    required this.listPermissions,
-  });
-
-  @override
-  State<WebViewPage> createState() => _WebViewPageState();
-}
-
-class _WebViewPageState extends State<WebViewPage> {
-  late final WebViewController _controller;
-  final int _port = 8080;
-  HttpServer? server;
-  final String userToken = 'abc123xyz';
-
-  @override
-  void initState() {
-    // if (widget.listPermissions.contains("location")) {
-    //   //TODO show dialog request location
-    //   print("Requesting location permission");
-    //
-    //   Navigator.of(context).pop();
-    //   _controller = WebViewController();
-    //   return;
-    // }
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageFinished: (url) async {
-            // await Permission.location.request();
-            if (widget.listPermissions.contains("location")) {
-              //TODO show dialog request location
-              print("Requesting location permission");
-            }
-          },
-        ),
-      )
-      ..setOnConsoleMessage(
-        (message) {
-          print("Console.log: ${message.message}");
-        },
-      );
-    super.initState();
-    _initWebApp();
-  }
-
-  Future<void> _initWebApp() async {
-    final webFolder =
-        widget.folder ?? await prepareWebAssets(widget.appName ?? "");
-    server = await startLocalWebServer(webFolder, _port);
-    _controller.loadRequest(Uri.parse('http://localhost:$_port'));
-    _controller
-      ..setBackgroundColor(Colors.white)
-      ..platform.setOnPlatformPermissionRequest(
-        (request) {
-          request.grant();
-        },
-      );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Mini app: ${widget.appName}")),
-      body: WebViewWidget(
-        controller: _controller,
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          final script = "window.postMessage({token: '$userToken'}, '*');";
-          _controller.runJavaScript(script);
-        },
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    server?.close(force: true);
   }
 }
