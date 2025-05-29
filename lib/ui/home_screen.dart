@@ -4,12 +4,13 @@ import 'dart:isolate';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_super_app/constanst.dart';
-import 'package:flutter_super_app/helper.dart';
-import 'package:flutter_super_app/local_server.dart';
-import 'package:flutter_super_app/mini_app.dart';
+import 'package:flutter_super_app/core/constanst.dart';
+import 'package:flutter_super_app/core/helper.dart';
+import 'package:flutter_super_app/models/mini_app.dart';
+import 'package:flutter_super_app/services/local_server.dart';
+import 'package:flutter_super_app/services/zip_service.dart';
+import 'package:flutter_super_app/ui/inapp_webview_screen.dart';
 import 'package:flutter_super_app/utils.dart';
-import 'package:flutter_super_app/zip_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -193,12 +194,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => WebViewPage(
+                              builder: (_) => InAppWebViewScreen(
                                 appName: apps.keys.elementAt(index).name,
                                 folder: appDir,
-                                listPermissions: permissionList
-                                    .map((e) => e.toString())
-                                    .toList(),
                               ),
                             ),
                           );
@@ -225,6 +223,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           if (isLoading) Center(child: CircularProgressIndicator()),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.new_releases_rounded),
+        onPressed: () {},
       ),
     );
   }

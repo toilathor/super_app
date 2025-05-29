@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
@@ -29,5 +31,11 @@ class AppHelper {
     } else {
       return Future.value();
     }
+  }
+
+  static String generateInternalToken() {
+    final rand = Random.secure();
+    final bytes = List<int>.generate(32, (_) => rand.nextInt(256));
+    return base64Url.encode(bytes);
   }
 }
