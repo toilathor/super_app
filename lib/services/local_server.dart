@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
+import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_static/shelf_static.dart';
 
@@ -32,14 +33,30 @@ Future<String> prepareWebAssets(String appName) async {
 }
 
 /// Start a static server from the copied web assets
-Future<HttpServer> startLocalWebServer(String folderPath, int port) async {
+Future<HttpServer> startLocalWebServer(
+  String folderPath,
+  int port, {
+  String validToken = "",
+}) async {
   final handler = createStaticHandler(
     folderPath,
     defaultDocument: 'index.html',
     serveFilesOutsidePath: false,
   );
 
-  final server = await shelf_io.serve(handler, 'localhost', port);
+  final pipeline = Pipeline().addMiddleware(
+    (Handler innerHandler) {
+      return (Request request) async {
+        final token = request.headers['X-Internal-Token'];
+        if (token != validToken) {
+          return Response.forbidden('Access Denied');
+        }
+        return innerHandler(request);
+      };
+    },
+  ).addHandler(handler);
+
+  final server = await shelf_io.serve(pipeline, 'localhost', port);
   print('Serving at http://localhost:$port');
   return server;
 }
