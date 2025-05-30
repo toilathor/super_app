@@ -1,9 +1,23 @@
 import 'dart:io';
 
+import 'package:mime/mime.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_router/shelf_router.dart';
 import 'package:shelf_static/shelf_static.dart';
+
+final customMimeTypeResolver = MimeTypeResolver()
+  ..addExtension('js', 'application/javascript')
+  ..addExtension('wasm', 'application/wasm')
+  ..addExtension('json', 'application/json')
+  ..addExtension('map', 'application/json')
+  ..addExtension('svg', 'image/svg+xml')
+  ..addExtension('ico', 'image/x-icon')
+  ..addExtension('css', 'text/css')
+  ..addExtension('html', 'text/html')
+  ..addExtension('png', 'image/png')
+  ..addExtension('jpg', 'image/jpeg')
+  ..addExtension('jpeg', 'image/jpeg');
 
 /// Start a static server from the copied web assets
 Future<HttpServer> startLocalWebServer(
@@ -15,70 +29,64 @@ Future<HttpServer> startLocalWebServer(
   final router = Router();
 
   for (final route in routes) {
-    router.mount(
-        route,
-        createStaticHandler(
-          "$rootPath$route",
-          defaultDocument: 'index.html',
-          serveFilesOutsidePath: false,
-        ));
+    final staticHandler = createStaticHandler(
+      "$rootPath$route",
+      defaultDocument: 'index.html',
+      serveFilesOutsidePath: false,
+      contentTypeResolver: customMimeTypeResolver,
+    );
+
+    // Bọc handler bằng middleware trước khi mount
+    final protectedHandler = Pipeline()
+        .addMiddleware(_checkTokenForIndexOnly(validToken))
+        .addHandler(staticHandler);
+
+    router.mount(route, protectedHandler);
   }
 
-  final pipeline = Pipeline()
-    ..addMiddleware(_checkToken(validToken))
-    ..addMiddleware(_fixMimeAnd403());
-
-  final server =
-      await shelf_io.serve(pipeline.addHandler(router.call), 'localhost', port);
-
-  server.autoCompress = true;
+  final server = await shelf_io.serve(
+    router.call,
+    'localhost',
+    port,
+  );
 
   print('Serving at http://localhost:$port');
   return server;
 }
 
-Middleware _checkToken(String validToken) {
-  return (innerHandler) {
-    return (request) async {
-      final token = request.headers['X-Internal-Token'];
-      if (token != validToken) {
-        return Response.forbidden('Access Denied');
+Middleware _checkTokenForIndexOnly(String validToken) {
+  return (Handler innerHandler) {
+    return (Request request) async {
+      final path = request.url.path;
+
+      // Cho phép favicon, JS, CSS, ảnh mà không cần token
+      final allowedExtensions = [
+        '.js',
+        '.css',
+        '.png',
+        '.jpg',
+        '.jpeg',
+        '.svg',
+        '.ico',
+        '.webp'
+      ];
+      final isStaticFile = allowedExtensions.any((ext) => path.endsWith(ext));
+
+      // Nếu là file tĩnh → bỏ qua token
+      if (isStaticFile) {
+        return await innerHandler(request);
       }
-      return innerHandler(request);
-    };
-  };
-}
 
-Middleware _fixMimeAnd403() {
-  return (innerHandler) {
-    return (request) async {
-      final response = await innerHandler(request);
-
-      // Nếu 403 thì trả lại 404 hoặc sửa lại header
-      if (response.statusCode == 403 || response.statusCode == 404) {
-        final path = request.requestedUri.path;
-
-        if (path.endsWith(".js")) {
-          final file = File("miniapp$path");
-          if (await file.exists()) {
-            final jsContent = await file.readAsString();
-            return Response.ok(jsContent, headers: {
-              'Content-Type': 'application/javascript',
-            });
-          }
+      // Nếu là index.html → kiểm tra token
+      if (path.endsWith('index.html')) {
+        final token = request.headers['X-Internal-Token'];
+        if (token != validToken || token == null || token.isEmpty) {
+          return Response.forbidden('Access Denied: Missing or invalid token.');
         }
       }
 
-      // Fix MIME
-      final path = request.requestedUri.path;
-      if (path.endsWith(".js")) {
-        return response.change(headers: {
-          ...response.headers,
-          "Content-Type": "application/javascript"
-        });
-      }
-
-      return response;
+      // Cho phép request tiếp tục
+      return await innerHandler(request);
     };
   };
 }
