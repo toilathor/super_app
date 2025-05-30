@@ -247,14 +247,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     int.parse(versionSplit[2])
                 : 0;
             if (version > app.version) {
-              await _downloadApp(app.link, app.name);
+              await _downloadApp(app.link, app.name, app.checksum);
             }
           }
         }
       } else {
         apps[app] = false;
         if (app.isEnable) {
-          await _downloadApp(app.link, app.name);
+          await _downloadApp(app.link, app.name, app.checksum);
         }
       }
     }
@@ -274,7 +274,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _downloadApp(String link, String name) async {
+  Future<void> _downloadApp(String link, String name, String hash) async {
     final token = RootIsolateToken.instance;
     if (token == null) {
       print("Cannot get the RootIsolateToken");
@@ -285,11 +285,11 @@ class _HomeScreenState extends State<HomeScreen> {
     await Isolate.spawn(
       _downloadAndExtract,
       _DownloadMessage(
-        link: link,
-        name: name,
-        sendPort: receivePort.sendPort,
-        token: token,
-      ),
+          link: link,
+          name: name,
+          sendPort: receivePort.sendPort,
+          token: token,
+          hash: hash),
     );
 
     final result = await receivePort.first as bool;
@@ -313,12 +313,14 @@ class _DownloadMessage {
   final String name;
   final SendPort sendPort;
   final RootIsolateToken token;
+  final String hash;
 
   _DownloadMessage({
     required this.link,
     required this.name,
     required this.sendPort,
     required this.token,
+    required this.hash,
   });
 }
 
@@ -333,10 +335,8 @@ Future<void> _downloadAndExtract(_DownloadMessage message) async {
     );
 
     if (pathDownload != null) {
-      await ZipService.extractZip(
-        pathDownload,
-        onZipSuccess: (path) {},
-      );
+      await ZipService.extractZip(pathDownload,
+          onZipSuccess: (path) {}, hash: message.hash);
       message.sendPort.send(true);
     } else {
       message.sendPort.send(false);

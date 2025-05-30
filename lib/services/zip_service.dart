@@ -1,16 +1,27 @@
 import 'dart:io';
 
 import 'package:archive/archive.dart';
-import 'package:flutter/services.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter_super_app/core/constanst.dart';
 import 'package:path_provider/path_provider.dart';
 
 class ZipService {
   static Future<String> extractZip(String zipPath,
-      {required void Function(String path) onZipSuccess}) async {
+      {required void Function(String path) onZipSuccess,
+      required String hash}) async {
     try {
       // Read the ZIP file from assets
       final bytes = File(zipPath).readAsBytesSync();
+
+      // Calculate MD5 hash of the ZIP file
+      final calculatedHash = md5.convert(bytes).toString();
+
+      // Verify hash matches
+      if (calculatedHash != hash) {
+        throw Exception(
+            'Hash verification failed. Expected: $hash, Got: $calculatedHash');
+      }
+
       final archive = ZipDecoder().decodeBytes(bytes);
 
       // Get the application documents directory

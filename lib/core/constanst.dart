@@ -5,22 +5,22 @@ import 'package:flutter_super_app/models/mini_app.dart';
 class AppConstant {
   static List<MiniApp> apps = [
     MiniApp(
-      id: "1",
-      name: "app1",
-      link:
-          "https://raw.githubusercontent.com/toilathor/store_mini_app/refs/heads/master/app1.zip",
-      isEnable: true,
-      currentVersion: 1,
-      version: 1,
-        checksum: "bada73ee34d3c56226b98dfe2fc30ae8"),
+        id: "1",
+        name: "app1",
+        link:
+            "https://raw.githubusercontent.com/toilathor/store_mini_app/refs/heads/master/app1.zip",
+        isEnable: true,
+        currentVersion: 1,
+        version: 1,
+        checksum: "bada73ee34d3c56226b98dfe2fc30ae9"),
     MiniApp(
-      id: "2",
-      name: "app2",
-      link:
-          "https://raw.githubusercontent.com/toilathor/store_mini_app/refs/heads/master/app2.zip",
-      isEnable: true,
-      currentVersion: 1,
-      version: 1,
+        id: "2",
+        name: "app2",
+        link:
+            "https://raw.githubusercontent.com/toilathor/store_mini_app/refs/heads/master/app2.zip",
+        isEnable: true,
+        currentVersion: 1,
+        version: 1,
         checksum: "c74f913a4ae8e52fd31c7f0cea22de48"),
     MiniApp(
         id: "3",
