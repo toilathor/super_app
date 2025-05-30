@@ -39,6 +39,7 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
             'http://localhost:$_port/${widget.appName}/index.html',
           )),
           headers: {'X-Internal-Token': widget.userToken ?? ""},
+          httpShouldUsePipelining: true,
         ),
         onWebViewCreated: _onWebViewCreated,
         onPermissionRequest: (controller, request) async {
