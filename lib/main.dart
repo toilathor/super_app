@@ -9,8 +9,6 @@ WebViewEnvironment? webViewEnvironment;
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Permission.camera.request();
-
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
     final availableVersion = await WebViewEnvironment.getAvailableVersion();
     assert(availableVersion != null,
