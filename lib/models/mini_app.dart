@@ -5,6 +5,7 @@ class MiniApp {
   final bool isEnable;
   final int version;
   final int currentVersion;
+  final String checksum;
 
   MiniApp({
     required this.id,
@@ -13,5 +14,6 @@ class MiniApp {
     required this.isEnable,
     required this.currentVersion,
     required this.version,
+    required this.checksum,
   });
 }
