@@ -1,17 +1,19 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_super_app/core/constanst.dart';
-import 'package:flutter_super_app/core/helper.dart';
-import 'package:flutter_super_app/services/local_server.dart';
 
 class InAppWebViewScreen extends StatefulWidget {
   final String? appName;
   final String? folder;
+  final String? userToken;
 
-  const InAppWebViewScreen({super.key, this.appName, this.folder});
+  const InAppWebViewScreen({
+    super.key,
+    this.appName,
+    this.folder,
+    this.userToken,
+  });
 
   @override
   State<InAppWebViewScreen> createState() => _InAppWebViewScreenState();
@@ -19,27 +21,12 @@ class InAppWebViewScreen extends StatefulWidget {
 
 class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
   final int _port = 8080;
-  HttpServer? server;
-  String userToken = '';
 
   InAppWebViewController? webViewController;
 
   @override
   void initState() {
     super.initState();
-    userToken = AppHelper.generateInternalToken();
-
-    WidgetsBinding.instance.addPostFrameCallback(
-      (timeStamp) async {
-        if (widget.folder != null) {
-          server = await startLocalWebServer(
-            widget.folder!,
-            _port,
-            validToken: userToken,
-          );
-        }
-      },
-    );
   }
 
   @override
@@ -48,8 +35,10 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
       appBar: AppBar(title: const Text("Official InAppWebView website")),
       body: InAppWebView(
         initialUrlRequest: URLRequest(
-          url: WebUri.uri(Uri.parse('http://localhost:$_port/index.html')),
-          headers: {'X-Internal-Token': userToken},
+          url: WebUri.uri(Uri.parse(
+            'http://localhost:$_port/${widget.appName}/index.html',
+          )),
+          headers: {'X-Internal-Token': widget.userToken ?? ""},
         ),
         onWebViewCreated: _onWebViewCreated,
         onPermissionRequest: (controller, request) async {
@@ -107,11 +96,6 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
 
   void _onWebViewCreated(InAppWebViewController controller) async {
     webViewController = controller;
-  }
-
-  @override
-  void dispose() {
-    server?.close(force: true);
-    super.dispose();
+    await webViewController?.clearHistory();
   }
 }

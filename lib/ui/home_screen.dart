@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_super_app/core/constanst.dart';
 import 'package:flutter_super_app/core/helper.dart';
 import 'package:flutter_super_app/models/mini_app.dart';
+import 'package:flutter_super_app/services/local_server.dart';
 import 'package:flutter_super_app/services/zip_service.dart';
 import 'package:flutter_super_app/ui/inapp_webview_screen.dart';
 import 'package:flutter_super_app/utils.dart';
@@ -23,6 +24,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final Map<MiniApp, bool> apps = {};
 
   bool isLoading = false;
+  late HttpServer server;
+  late String userToken;
 
   Future<bool?> _showPermissionDialog(Map<String, dynamic> permissions) async {
     final List<dynamic> permissionList =
@@ -168,17 +171,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
                           var permissionFile = File('$appDir/permission.json');
 
-                          List<dynamic> permissionList = [];
-
                           if (await permissionFile.exists()) {
                             final permissionContent =
                                 await permissionFile.readAsString();
                             final permission = permissionContent.isNotEmpty
                                 ? jsonDecode(permissionContent)
                                 : null;
-
-                            permissionList =
-                                permission['permissions'] as List<dynamic>;
 
                             if (permission != null) {
                               final bool? result =
@@ -195,6 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               builder: (_) => InAppWebViewScreen(
                                 appName: apps.keys.elementAt(index).name,
                                 folder: appDir,
+                                userToken: userToken,
                               ),
                             ),
                           );
@@ -222,9 +221,13 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     final dirDoc = await getApplicationDocumentsDirectory();
     final dirMiniApps = "${dirDoc.path}/${AppConstant.folderApps}";
+    final List<String> routes = [];
 
     for (final app in AppConstant.apps) {
       final appDir = '$dirMiniApps/${app.name}';
+
+      routes.add('/${app.name}');
+
       final appExists = await Directory(appDir).exists();
       if (appExists) {
         apps[app] = true;
@@ -260,6 +263,15 @@ class _HomeScreenState extends State<HomeScreen> {
       isLoading = false;
       apps.removeWhere((key, value) => !value);
     });
+
+    userToken = AppHelper.generateInternalToken();
+
+    server = await startLocalWebServer(
+      dirMiniApps,
+      8080,
+      routes: routes,
+      validToken: userToken,
+    );
   }
 
   Future<void> _downloadApp(String link, String name) async {
@@ -287,6 +299,12 @@ class _HomeScreenState extends State<HomeScreen> {
             true;
       });
     }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    server.close(force: true);
   }
 }
 

@@ -2,26 +2,36 @@ import 'dart:io';
 
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
+import 'package:shelf_router/shelf_router.dart';
 import 'package:shelf_static/shelf_static.dart';
 
 /// Start a static server from the copied web assets
 Future<HttpServer> startLocalWebServer(
-  String folderPath,
+  String rootPath,
   int port, {
+  required List<String> routes,
   String validToken = "",
 }) async {
-  final handler = createStaticHandler(
-    folderPath,
-    defaultDocument: 'index.html',
-    serveFilesOutsidePath: false,
-  );
+  final router = Router();
+
+  for (final route in routes) {
+    router.mount(
+        route,
+        createStaticHandler(
+          "$rootPath$route",
+          defaultDocument: 'index.html',
+          serveFilesOutsidePath: false,
+        ));
+  }
 
   final pipeline = Pipeline()
     ..addMiddleware(_checkToken(validToken))
     ..addMiddleware(_fixMimeAnd403());
 
   final server =
-      await shelf_io.serve(pipeline.addHandler(handler), 'localhost', port);
+      await shelf_io.serve(pipeline.addHandler(router.call), 'localhost', port);
+
+  server.autoCompress = true;
 
   print('Serving at http://localhost:$port');
   return server;
