@@ -6,6 +6,7 @@ class MiniApp {
   final int version;
   final int currentVersion;
   final String checksum;
+  bool needDownload;
 
   MiniApp({
     required this.id,
@@ -15,5 +16,10 @@ class MiniApp {
     required this.currentVersion,
     required this.version,
     required this.checksum,
+    required this.needDownload,
   });
+
+  void setNeedDownload(bool value) {
+    needDownload = value;
+  }
 }

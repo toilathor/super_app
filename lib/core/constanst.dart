@@ -5,32 +5,38 @@ import 'package:flutter_super_app/models/mini_app.dart';
 class AppConstant {
   static List<MiniApp> apps = [
     MiniApp(
-        id: "1",
-        name: "app1",
-        link:
-            "https://raw.githubusercontent.com/toilathor/app1/refs/heads/master/app1.zip",
-        isEnable: true,
-        currentVersion: 1,
-        version: 1,
-        checksum: "bada73ee34d3c56226b98dfe2fc30ae8"),
+      id: "1",
+      name: "app1",
+      link:
+          "https://raw.githubusercontent.com/toilathor/app1/refs/heads/master/app1.zip",
+      isEnable: true,
+      currentVersion: 1,
+      version: 1,
+      checksum: "bada73ee34d3c56226b98dfe2fc30ae8",
+      needDownload: false,
+    ),
     MiniApp(
-        id: "2",
-        name: "app2",
-        link:
-            "https://raw.githubusercontent.com/toilathor/app2/refs/heads/master/app2.zip",
-        isEnable: true,
-        currentVersion: 1,
-        version: 1,
-        checksum: "c74f913a4ae8e52fd31c7f0cea22de48"),
+      id: "2",
+      name: "app2",
+      link:
+          "https://raw.githubusercontent.com/toilathor/app2/refs/heads/master/app2.zip",
+      isEnable: true,
+      currentVersion: 1,
+      version: 1,
+      checksum: "c74f913a4ae8e52fd31c7f0cea22de48",
+      needDownload: true,
+    ),
     MiniApp(
-        id: "3",
-        name: "app3",
-        link:
-            "https://raw.githubusercontent.com/toilathor/app3/refs/heads/master/app3.zip",
-        isEnable: true,
-        currentVersion: 1,
-        version: 1,
-        checksum: "5d0cf8b8ca22ad5ce63eee07a75d5610"),
+      id: "3",
+      name: "app3",
+      link:
+          "https://raw.githubusercontent.com/toilathor/app3/refs/heads/master/app3.zip",
+      isEnable: true,
+      currentVersion: 1,
+      version: 1,
+      checksum: "5d0cf8b8ca22ad5ce63eee07a75d5610",
+      needDownload: true,
+    ),
   ];
 
   static const folderApps = "mini_apps";

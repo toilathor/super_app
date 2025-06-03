@@ -201,6 +201,37 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                       title: Text(apps.keys.elementAt(index).name),
                       leading: FlutterLogo(),
+                      trailing: IconButton(
+                        onPressed: () async {
+                          final app = apps.keys.elementAt(index);
+                          final dirDoc =
+                              await getApplicationDocumentsDirectory();
+                          final dirMiniApps =
+                              "${dirDoc.path}/${AppConstant.folderApps}";
+                          final appDir = '$dirMiniApps/${app.name}';
+                          if (!app.needDownload) {
+                            await AppHelper.deleteDirectory(appDir);
+                            setState(() {
+                              apps[app] = false;
+                              app.setNeedDownload(true);
+                            });
+                          } else {
+                            setState(() {
+                              isLoading = true;
+                            });
+                            await _downloadApp(
+                                app.link, app.name, app.checksum);
+                            setState(() {
+                              isLoading = false;
+                              app.setNeedDownload(false);
+                            });
+                          }
+                        },
+                        icon: Icon(
+                          _renderIconByConfig(
+                              apps.keys.elementAt(index).needDownload),
+                        ),
+                      ),
                     )
                   : SizedBox();
             },
@@ -213,6 +244,13 @@ class _HomeScreenState extends State<HomeScreen> {
         onPressed: () {},
       ),
     );
+  }
+
+  IconData _renderIconByConfig(bool needDownload) {
+    if (needDownload) {
+      return Icons.install_mobile_rounded;
+    }
+    return Icons.remove_circle_outline;
   }
 
   Future<void> _initApps() async {
@@ -234,6 +272,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (!app.isEnable) {
           await AppHelper.deleteDirectory(appDir);
         } else {
+          app.setNeedDownload(false);
           final versionFile = File('$appDir/version.json');
           if (await versionFile.exists()) {
             final versionContent = await versionFile.readAsString();
@@ -248,20 +287,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 : 0;
             if (version > app.version) {
               await _downloadApp(app.link, app.name, app.checksum);
+              app.setNeedDownload(false);
             }
           }
         }
       } else {
         apps[app] = false;
-        if (app.isEnable) {
+        app.setNeedDownload(true);
+        if (app.isEnable && !app.needDownload) {
           await _downloadApp(app.link, app.name, app.checksum);
+          app.setNeedDownload(false);
         }
       }
     }
 
     setState(() {
       isLoading = false;
-      apps.removeWhere((key, value) => !value);
+      // apps.removeWhere((key, value) => !value);
     });
 
     userToken = AppHelper.generateInternalToken();
