@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter_super_app/services/encrypt_service.dart';
 import 'package:mime/mime.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
@@ -29,12 +30,26 @@ Future<HttpServer> startLocalWebServer(
   final router = Router();
 
   for (final route in routes) {
-    final staticHandler = createStaticHandler(
-      "$rootPath$route",
-      defaultDocument: 'index.html',
-      serveFilesOutsidePath: false,
-      contentTypeResolver: customMimeTypeResolver,
-    );
+    staticHandler(Request request) async {
+      final path = request.url.path;
+      final filePath = "$rootPath$route/$path";
+      final filePathEnc = "$filePath.enc";
+      if (EncryptService.isEncryptTarget(filePathEnc) && await File(filePathEnc).exists()) {
+        // Nếu là file mã hóa, giải mã trước khi trả về
+        final encryptedContent = await File(filePathEnc).readAsString();
+        final decryptedContent = EncryptService.decryptString(encryptedContent);
+        final mimeType = customMimeTypeResolver.lookup(filePath) ?? 'text/plain';
+        return Response.ok(decryptedContent, headers: {'content-type': mimeType});
+      }
+      // Nếu không, dùng static handler mặc định
+      final handler = createStaticHandler(
+        "$rootPath$route",
+        defaultDocument: 'index.html',
+        serveFilesOutsidePath: false,
+        contentTypeResolver: customMimeTypeResolver,
+      );
+      return handler(request);
+    }
 
     // Bọc handler bằng middleware trước khi mount
     final protectedHandler = Pipeline()
