@@ -4,6 +4,7 @@ import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_super_app/core/constanst.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter_super_app/services/encrypt_service.dart';
 
 class ZipService {
   static Future<String> extractZip(String zipPath,
@@ -40,6 +41,9 @@ class ZipService {
         }
       }
 
+      // Mã hóa các file .json, .js, .html sau khi extract
+      await _encryptExtractedFiles(extractPath);
+
       onZipSuccess.call(extractPath);
       File(zipPath).deleteSync(recursive: true);
 
@@ -47,6 +51,21 @@ class ZipService {
     } catch (e) {
       print('Error extracting ZIP: $e');
       rethrow;
+    }
+  }
+
+  static Future<void> _encryptExtractedFiles(String dirPath) async {
+    final dir = Directory(dirPath);
+    if (!await dir.exists()) return;
+    await for (final entity in dir.list(recursive: true, followLinks: false)) {
+      if (entity is File) {
+        final fileName = entity.path.split('/').last;
+        // Bỏ qua file ẩn của macOS và file đã mã hóa
+        if (entity.path.contains('__MACOSX') || fileName.startsWith('._') || fileName.endsWith('.enc')) continue;
+        if (fileName.endsWith('.json') || fileName.endsWith('.js') || fileName.endsWith('.html')) {
+          await EncryptService.encryptFile(entity.path);
+        }
+      }
     }
   }
 }
