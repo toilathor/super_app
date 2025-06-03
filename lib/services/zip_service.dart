@@ -45,7 +45,6 @@ class ZipService {
 
       return extractPath;
     } catch (e) {
-      print('Error extracting ZIP: $e');
       rethrow;
     }
   }

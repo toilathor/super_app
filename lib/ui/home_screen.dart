@@ -6,8 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_super_app/core/constanst.dart';
 import 'package:flutter_super_app/core/helper.dart';
+import 'package:flutter_super_app/core/logger.dart';
+import 'package:flutter_super_app/core/router.dart';
 import 'package:flutter_super_app/models/mini_app.dart';
 import 'package:flutter_super_app/services/local_server.dart';
+import 'package:flutter_super_app/services/secure_storage_service.dart';
 import 'package:flutter_super_app/services/zip_service.dart';
 import 'package:flutter_super_app/ui/inapp_webview_screen.dart';
 import 'package:flutter_super_app/utils.dart';
@@ -152,7 +155,14 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: _logout,
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           ListView.builder(
@@ -187,14 +197,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             }
                           }
 
-                          Navigator.push(
+                          Navigator.pushNamed(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => InAppWebViewScreen(
-                                appName: apps.keys.elementAt(index).name,
-                                folder: appDir,
-                                userToken: userToken,
-                              ),
+                            AppRoutes.miniApp,
+                            arguments: InAppWebViewScreenArgument(
+                              appName: apps.keys.elementAt(index).name,
+                              folder: appDir,
                             ),
                           );
                         }
@@ -277,7 +285,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _downloadApp(String link, String name, String hash) async {
     final token = RootIsolateToken.instance;
     if (token == null) {
-      print("Cannot get the RootIsolateToken");
       return;
     }
     final receivePort = ReceivePort();
@@ -299,6 +306,18 @@ class _HomeScreenState extends State<HomeScreen> {
             true;
       });
     }
+  }
+
+  Future<void> _logout() async {
+    await SecureStorageService.I.deleteToken();
+
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.login,
+      (route) => false,
+    );
+
+    AppLogger.i("Logout!");
   }
 
   @override

@@ -15,9 +15,7 @@ class AppHelper {
       url,
       savePath,
       onReceiveProgress: (received, total) {
-        if (total != -1) {
-          print('Đang tải: ${(received / total * 100).toStringAsFixed(0)}%');
-        }
+        // TODO: Loading
       },
     );
 

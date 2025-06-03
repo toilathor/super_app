@@ -3,6 +3,11 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_super_app/models/mini_app.dart';
 
 class AppConstant {
+  static const String secretKey = String.fromEnvironment(
+    "JWT_SECRET",
+    defaultValue: "FAIL_TOKEN",
+  );
+
   static List<MiniApp> apps = [
     MiniApp(
         id: "1",
