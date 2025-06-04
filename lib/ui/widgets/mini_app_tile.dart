@@ -16,6 +16,7 @@ import 'package:flutter_super_app/services/zip_service.dart';
 import 'package:flutter_super_app/ui/inapp_webview_screen.dart';
 import 'package:flutter_super_app/ui/widgets/download_overlay.dart';
 import 'package:flutter_super_app/utils.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 class MiniAppTile extends StatefulWidget {
@@ -35,7 +36,10 @@ class _MiniAppTileState extends State<MiniAppTile> {
 
   @override
   void initState() {
-    _checkApp();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _checkApp();
+    });
+
     super.initState();
   }
 
@@ -198,6 +202,35 @@ class _MiniAppTileState extends State<MiniAppTile> {
     final dirDoc = await getApplicationDocumentsDirectory();
     final dirMiniApps = "${dirDoc.path}/${AppConstant.folderApps}";
     appDir = '$dirMiniApps/${widget.miniApp.name}';
+
+    final isExists = Directory(appDir).existsSync();
+
+    final app = widget.miniApp;
+
+    if (isExists) {
+      final url =
+          'https://api.github.com/repos/toilathor/${app.name}/branches/master';
+
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final currentHash = data['commit']['sha'];
+        print('sha of ${app.name} is $currentHash');
+        if (currentHash != app.gitHash) {
+          setState(() {
+            downloading = true;
+          });
+          await _downloadApp(app.link, app.name, app.checksum);
+        }
+      }
+    } else {
+      if (app.needDownload) {
+        setState(() {
+          downloading = true;
+        });
+        await _downloadApp(app.link, app.name, app.checksum);
+      }
+    }
 
     setState(() {
       appReady = Directory(appDir).existsSync();

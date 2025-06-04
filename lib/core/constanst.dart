@@ -30,7 +30,7 @@ class AppConstant {
       currentVersion: 1,
       version: 1,
       checksum: "c74f913a4ae8e52fd31c7f0cea22de48",
-      needDownload: false,
+      needDownload: true,
       gitHash: "68b837597ee21cd5d2ccb101e90d02608fe77f24",
     ),
     MiniApp(
