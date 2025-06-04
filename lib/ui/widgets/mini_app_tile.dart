@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
@@ -14,6 +15,7 @@ import 'package:flutter_super_app/models/mini_app.dart';
 import 'package:flutter_super_app/services/zip_service.dart';
 import 'package:flutter_super_app/ui/inapp_webview_screen.dart';
 import 'package:flutter_super_app/ui/widgets/download_overlay.dart';
+import 'package:flutter_super_app/utils.dart';
 import 'package:path_provider/path_provider.dart';
 
 class MiniAppTile extends StatefulWidget {
@@ -151,6 +153,19 @@ class _MiniAppTileState extends State<MiniAppTile> {
 
   Future<void> _onPressMiniApp() async {
     if (appReady == true) {
+      var permissionFile = File('$appDir/permission.json');
+      if (await permissionFile.exists()) {
+        final permissionContent = await permissionFile.readAsString();
+        final permission =
+            permissionContent.isNotEmpty ? jsonDecode(permissionContent) : null;
+
+        if (permission != null) {
+          final bool? result = await _showPermissionDialog(permission);
+          if (result != true) {
+            return;
+          }
+        }
+      }
       Navigator.pushNamed(
         context,
         AppRoutes.miniApp,
@@ -187,6 +202,120 @@ class _MiniAppTileState extends State<MiniAppTile> {
     setState(() {
       appReady = Directory(appDir).existsSync();
     });
+  }
+
+  Future<bool?> _showPermissionDialog(Map<String, dynamic> permissions) async {
+    final List<dynamic> permissionList =
+        permissions['permissions'] as List<dynamic>;
+    final List<dynamic> missingPermissions = [];
+
+    for (final permission in permissionList) {
+      final status = await Utils.I.checkPermissionStatus(permission.toString());
+      if (!status) {
+        missingPermissions.add(permission);
+      }
+    }
+
+    if (missingPermissions.isEmpty) {
+      return true;
+    }
+
+    int currentIndex = 0;
+    while (currentIndex < missingPermissions.length) {
+      final permission = missingPermissions[currentIndex];
+
+      if (!mounted) return false;
+
+      final bool? result = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Yêu cầu quyền truy cập'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ứng dụng cần quyền:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.check_circle_outline, color: Colors.green),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        Utils.I.getPermissionDescription(permission.toString()),
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Bạn có muốn cấp quyền này không?',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: Text('Từ chối'),
+                onPressed: () {
+                  Navigator.of(context).pop(false);
+                },
+              ),
+              TextButton(
+                child: Text('Đồng ý'),
+                onPressed: () {
+                  Navigator.of(context).pop(true);
+                },
+              ),
+            ],
+          );
+        },
+      );
+
+      if (result == true) {
+        final bool permissionGranted =
+            await Utils.I.requestPermission(permission.toString());
+
+        if (!mounted) return false;
+
+        if (!permissionGranted) {
+          final bool? retry = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text('Thông báo'),
+              content: Text(
+                'Bạn cần cấp quyền ${Utils.I.getPermissionDescription(permission.toString())} để sử dụng tính năng này. Bạn có muốn thử lại không?',
+              ),
+              actions: [
+                TextButton(
+                  child: Text('Không'),
+                  onPressed: () => Navigator.pop(context, false),
+                ),
+                TextButton(
+                  child: Text('Thử lại'),
+                  onPressed: () => Navigator.pop(context, true),
+                ),
+              ],
+            ),
+          );
+
+          if (retry == true) {
+            continue;
+          }
+          return false;
+        }
+      } else {
+        return false;
+      }
+      currentIndex++;
+    }
+    return true;
   }
 }
 

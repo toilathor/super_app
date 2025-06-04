@@ -6,15 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_super_app/core/constanst.dart';
 import 'package:flutter_super_app/core/helper.dart';
-import 'package:flutter_super_app/core/logger.dart';
 import 'package:flutter_super_app/core/router.dart';
 import 'package:flutter_super_app/models/mini_app.dart';
 import 'package:flutter_super_app/services/local_server.dart';
 import 'package:flutter_super_app/services/secure_storage_service.dart';
 import 'package:flutter_super_app/services/zip_service.dart';
-import 'package:flutter_super_app/ui/inapp_webview_screen.dart';
 import 'package:flutter_super_app/ui/widgets/mini_app_tile.dart';
-import 'package:flutter_super_app/utils.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -30,120 +28,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isLoading = false;
   late HttpServer server;
   late String userToken;
-
-  Future<bool?> _showPermissionDialog(Map<String, dynamic> permissions) async {
-    final List<dynamic> permissionList =
-        permissions['permissions'] as List<dynamic>;
-    final List<dynamic> missingPermissions = [];
-
-    for (final permission in permissionList) {
-      final status = await Utils.I.checkPermissionStatus(permission.toString());
-      if (!status) {
-        missingPermissions.add(permission);
-      }
-    }
-
-    if (missingPermissions.isEmpty) {
-      return true;
-    }
-
-    int currentIndex = 0;
-    while (currentIndex < missingPermissions.length) {
-      final permission = missingPermissions[currentIndex];
-
-      if (!mounted) return false;
-
-      final bool? result = await showDialog<bool>(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('Yêu cầu quyền truy cập'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Ứng dụng cần quyền:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.check_circle_outline, color: Colors.green),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        Utils.I.getPermissionDescription(permission.toString()),
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Bạn có muốn cấp quyền này không?',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-            actions: <Widget>[
-              TextButton(
-                child: Text('Từ chối'),
-                onPressed: () {
-                  Navigator.of(context).pop(false);
-                },
-              ),
-              TextButton(
-                child: Text('Đồng ý'),
-                onPressed: () {
-                  Navigator.of(context).pop(true);
-                },
-              ),
-            ],
-          );
-        },
-      );
-
-      if (result == true) {
-        final bool permissionGranted =
-            await Utils.I.requestPermission(permission.toString());
-
-        if (!mounted) return false;
-
-        if (!permissionGranted) {
-          final bool? retry = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Text('Thông báo'),
-              content: Text(
-                'Bạn cần cấp quyền ${Utils.I.getPermissionDescription(permission.toString())} để sử dụng tính năng này. Bạn có muốn thử lại không?',
-              ),
-              actions: [
-                TextButton(
-                  child: Text('Không'),
-                  onPressed: () => Navigator.pop(context, false),
-                ),
-                TextButton(
-                  child: Text('Thử lại'),
-                  onPressed: () => Navigator.pop(context, true),
-                ),
-              ],
-            ),
-          );
-
-          if (retry == true) {
-            continue;
-          }
-          return false;
-        }
-      } else {
-        return false;
-      }
-      currentIndex++;
-    }
-    return true;
-  }
 
   @override
   void initState() {
@@ -177,88 +61,9 @@ class _HomeScreenState extends State<HomeScreen> {
           return MiniAppTile(
             miniApp: apps.keys.elementAt(index),
           );
-
-          return apps.keys.elementAt(index).isEnable
-              ? ListTile(
-                  onTap: () async {
-                    if (apps.values.elementAt(index)) {
-                      final dirDoc = await getApplicationDocumentsDirectory();
-                      final dirMiniApps =
-                          "${dirDoc.path}/${AppConstant.folderApps}";
-                      final appDir =
-                          '$dirMiniApps/${apps.keys.elementAt(index).name}';
-
-                      var permissionFile = File('$appDir/permission.json');
-
-                      if (await permissionFile.exists()) {
-                        final permissionContent =
-                            await permissionFile.readAsString();
-                        final permission = permissionContent.isNotEmpty
-                            ? jsonDecode(permissionContent)
-                            : null;
-
-                        if (permission != null) {
-                    final bool? result =
-                    await _showPermissionDialog(permission);
-                    if (result != true) {
-                      return;
-                    }
-                  }
-                }
-
-                      Navigator.pushNamed(
-                        context,
-                        AppRoutes.miniApp,
-                        arguments: InAppWebViewScreenArgument(
-                          appName: apps.keys.elementAt(index).name,
-                          folder: appDir,
-                        ),
-                      );
-                    }
-                  },
-                  title: Text(apps.keys.elementAt(index).name),
-                  leading: FlutterLogo(),
-                  trailing: IconButton(
-                    onPressed: () async {
-                      final app = apps.keys.elementAt(index);
-                      final dirDoc = await getApplicationDocumentsDirectory();
-                      final dirMiniApps =
-                          "${dirDoc.path}/${AppConstant.folderApps}";
-                      final appDir = '$dirMiniApps/${app.name}';
-                      if (!app.needDownload) {
-                        await AppHelper.deleteDirectory(appDir);
-                        setState(() {
-                          apps[app] = false;
-                          app.setNeedDownload(true);
-                        });
-                      } else {
-                        setState(() {
-                          isLoading = true;
-                        });
-                        await _downloadApp(app.link, app.name, app.checksum);
-                        setState(() {
-                          isLoading = false;
-                          app.setNeedDownload(false);
-                        });
-                      }
-                    },
-                    icon: Icon(
-                      _renderIconByConfig(
-                          apps.keys.elementAt(index).needDownload),
-                    ),
-                  ),
-                )
-              : SizedBox();
         },
       ),
     );
-  }
-
-  IconData _renderIconByConfig(bool needDownload) {
-    if (needDownload) {
-      return Icons.install_mobile_rounded;
-    }
-    return Icons.remove_circle_outline;
   }
 
   Future<void> _initApps() async {
@@ -281,19 +86,15 @@ class _HomeScreenState extends State<HomeScreen> {
           await AppHelper.deleteDirectory(appDir);
         } else {
           app.setNeedDownload(false);
-          final versionFile = File('$appDir/version.json');
-          if (await versionFile.exists()) {
-            final versionContent = await versionFile.readAsString();
-            final versionData =
-                versionContent.isNotEmpty ? jsonDecode(versionContent) : null;
-            final currentVersion = versionData["version"] ?? "";
-            final versionSplit = currentVersion.split('.');
-            final version = versionSplit.isNotEmpty
-                ? int.parse(versionSplit[0]) +
-                    int.parse(versionSplit[1]) +
-                    int.parse(versionSplit[2])
-                : 0;
-            if (version > app.version) {
+          final url =
+              'https://api.github.com/repos/toilathor/${app.name}/branches/master';
+
+          final response = await http.get(Uri.parse(url));
+          if (response.statusCode == 200) {
+            final data = jsonDecode(response.body);
+            final currentHash = data['commit']['sha'];
+            print('sha of ${app.name} is $currentHash');
+            if (currentHash != app.gitHash) {
               await _downloadApp(app.link, app.name, app.checksum);
               app.setNeedDownload(false);
             }
@@ -301,7 +102,6 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       } else {
         apps[app] = false;
-        app.setNeedDownload(true);
         if (app.isEnable && !app.needDownload) {
           await _downloadApp(app.link, app.name, app.checksum);
           app.setNeedDownload(false);
@@ -351,15 +151,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _logout() async {
-    await SecureStorageService.I.deleteToken();
-
     Navigator.pushNamedAndRemoveUntil(
       context,
       AppRoutes.login,
       (route) => false,
     );
 
-    AppLogger.i("Logout!");
+    await SecureStorageService.I.deleteToken();
   }
 
   @override

@@ -18,7 +18,8 @@ class AppConstant {
       currentVersion: 1,
       version: 1,
       checksum: "ea8a52e1104462cfcc45ddb001709ba9",
-      needDownload: false,
+      needDownload: true,
+      gitHash: "73e94b49bd93a15341ead8483f7b47d9da6ec068",
     ),
     MiniApp(
       id: "2",
@@ -29,7 +30,8 @@ class AppConstant {
       currentVersion: 1,
       version: 1,
       checksum: "c74f913a4ae8e52fd31c7f0cea22de48",
-      needDownload: true,
+      needDownload: false,
+      gitHash: "68b837597ee21cd5d2ccb101e90d02608fe77f24",
     ),
     MiniApp(
       id: "3",
@@ -40,7 +42,8 @@ class AppConstant {
       currentVersion: 1,
       version: 1,
       checksum: "c5a1281f94e194ba24c6d8040ee22a92",
-      needDownload: true,
+      needDownload: false,
+      gitHash: "8b060baa78c819a54b2e062b2d23c25d47757b61",
     ),
   ];
 
