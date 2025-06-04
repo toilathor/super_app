@@ -7,17 +7,18 @@ class MiniApp {
   final int currentVersion;
   final String checksum;
   bool needDownload;
+  final String gitHash;
 
-  MiniApp({
-    required this.id,
-    required this.name,
-    required this.link,
-    required this.isEnable,
-    required this.currentVersion,
-    required this.version,
-    required this.checksum,
-    required this.needDownload,
-  });
+  MiniApp(
+      {required this.id,
+      required this.name,
+      required this.link,
+      required this.isEnable,
+      required this.currentVersion,
+      required this.version,
+      required this.checksum,
+      required this.needDownload,
+      required this.gitHash});
 
   void setNeedDownload(bool value) {
     needDownload = value;
