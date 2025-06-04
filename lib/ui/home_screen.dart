@@ -11,6 +11,7 @@ import 'package:flutter_super_app/services/local_server.dart';
 import 'package:flutter_super_app/services/zip_service.dart';
 import 'package:flutter_super_app/ui/inapp_webview_screen.dart';
 import 'package:flutter_super_app/utils.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -220,7 +221,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               isLoading = true;
                             });
                             await _downloadApp(
-                                app.link, app.name, app.checksum);
+                              app.link,
+                              app.name,
+                              app.checksum,
+                            );
                             setState(() {
                               isLoading = false;
                               app.setNeedDownload(false);
@@ -273,19 +277,15 @@ class _HomeScreenState extends State<HomeScreen> {
           await AppHelper.deleteDirectory(appDir);
         } else {
           app.setNeedDownload(false);
-          final versionFile = File('$appDir/version.json');
-          if (await versionFile.exists()) {
-            final versionContent = await versionFile.readAsString();
-            final versionData =
-                versionContent.isNotEmpty ? jsonDecode(versionContent) : null;
-            final currentVersion = versionData["version"] ?? "";
-            final versionSplit = currentVersion.split('.');
-            final version = versionSplit.isNotEmpty
-                ? int.parse(versionSplit[0]) +
-                    int.parse(versionSplit[1]) +
-                    int.parse(versionSplit[2])
-                : 0;
-            if (version > app.version) {
+          final url =
+              'https://api.github.com/repos/toilathor/${app.name}/branches/master';
+
+          final response = await http.get(Uri.parse(url));
+          if (response.statusCode == 200) {
+            final data = jsonDecode(response.body);
+            final currentHash = data['commit']['sha'];
+            print('sha of ${app.name} is $currentHash');
+            if (currentHash != app.gitHash) {
               await _downloadApp(app.link, app.name, app.checksum);
               app.setNeedDownload(false);
             }
@@ -293,7 +293,6 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       } else {
         apps[app] = false;
-        app.setNeedDownload(true);
         if (app.isEnable && !app.needDownload) {
           await _downloadApp(app.link, app.name, app.checksum);
           app.setNeedDownload(false);
