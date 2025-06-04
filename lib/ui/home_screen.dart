@@ -13,6 +13,7 @@ import 'package:flutter_super_app/services/local_server.dart';
 import 'package:flutter_super_app/services/secure_storage_service.dart';
 import 'package:flutter_super_app/services/zip_service.dart';
 import 'package:flutter_super_app/ui/inapp_webview_screen.dart';
+import 'package:flutter_super_app/ui/widgets/mini_app_tile.dart';
 import 'package:flutter_super_app/utils.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -163,93 +164,92 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          ListView.builder(
-            itemCount: apps.length,
-            itemBuilder: (_, int index) {
-              return apps.keys.elementAt(index).isEnable
-                  ? ListTile(
-                      onTap: () async {
-                        if (apps.values.elementAt(index)) {
-                          final dirDoc =
-                              await getApplicationDocumentsDirectory();
-                          final dirMiniApps =
-                              "${dirDoc.path}/${AppConstant.folderApps}";
-                          final appDir =
-                              '$dirMiniApps/${apps.keys.elementAt(index).name}';
+      body: GridView.builder(
+        shrinkWrap: true,
+        itemCount: apps.length,
+        padding: EdgeInsets.all(16),
+        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 130,
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
+        ),
+        itemBuilder: (_, int index) {
+          return MiniAppTile(
+            miniApp: apps.keys.elementAt(index),
+          );
 
-                          var permissionFile = File('$appDir/permission.json');
+          return apps.keys.elementAt(index).isEnable
+              ? ListTile(
+                  onTap: () async {
+                    if (apps.values.elementAt(index)) {
+                      final dirDoc = await getApplicationDocumentsDirectory();
+                      final dirMiniApps =
+                          "${dirDoc.path}/${AppConstant.folderApps}";
+                      final appDir =
+                          '$dirMiniApps/${apps.keys.elementAt(index).name}';
 
-                          if (await permissionFile.exists()) {
-                            final permissionContent =
-                                await permissionFile.readAsString();
-                            final permission = permissionContent.isNotEmpty
-                                ? jsonDecode(permissionContent)
-                                : null;
+                      var permissionFile = File('$appDir/permission.json');
 
-                            if (permission != null) {
-                              final bool? result =
-                                  await _showPermissionDialog(permission);
-                              if (result != true) {
-                                return;
-                              }
-                            }
-                          }
+                      if (await permissionFile.exists()) {
+                        final permissionContent =
+                            await permissionFile.readAsString();
+                        final permission = permissionContent.isNotEmpty
+                            ? jsonDecode(permissionContent)
+                            : null;
 
-                          Navigator.pushNamed(
-                            context,
-                            AppRoutes.miniApp,
-                            arguments: InAppWebViewScreenArgument(
-                              appName: apps.keys.elementAt(index).name,
-                              folder: appDir,
-                            ),
-                          );
-                        }
-                      },
-                      title: Text(apps.keys.elementAt(index).name),
-                      leading: FlutterLogo(),
-                      trailing: IconButton(
-                        onPressed: () async {
-                          final app = apps.keys.elementAt(index);
-                          final dirDoc =
-                              await getApplicationDocumentsDirectory();
-                          final dirMiniApps =
-                              "${dirDoc.path}/${AppConstant.folderApps}";
-                          final appDir = '$dirMiniApps/${app.name}';
-                          if (!app.needDownload) {
-                            await AppHelper.deleteDirectory(appDir);
-                            setState(() {
-                              apps[app] = false;
-                              app.setNeedDownload(true);
-                            });
-                          } else {
-                            setState(() {
-                              isLoading = true;
-                            });
-                            await _downloadApp(
-                                app.link, app.name, app.checksum);
-                            setState(() {
-                              isLoading = false;
-                              app.setNeedDownload(false);
-                            });
-                          }
-                        },
-                        icon: Icon(
-                          _renderIconByConfig(
-                              apps.keys.elementAt(index).needDownload),
+                        if (permission != null) {
+                    final bool? result =
+                    await _showPermissionDialog(permission);
+                    if (result != true) {
+                      return;
+                    }
+                  }
+                }
+
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.miniApp,
+                        arguments: InAppWebViewScreenArgument(
+                          appName: apps.keys.elementAt(index).name,
+                          folder: appDir,
                         ),
-                      ),
-                    )
-                  : SizedBox();
-            },
-          ),
-          if (isLoading) Center(child: CircularProgressIndicator()),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.new_releases_rounded),
-        onPressed: () {},
+                      );
+                    }
+                  },
+                  title: Text(apps.keys.elementAt(index).name),
+                  leading: FlutterLogo(),
+                  trailing: IconButton(
+                    onPressed: () async {
+                      final app = apps.keys.elementAt(index);
+                      final dirDoc = await getApplicationDocumentsDirectory();
+                      final dirMiniApps =
+                          "${dirDoc.path}/${AppConstant.folderApps}";
+                      final appDir = '$dirMiniApps/${app.name}';
+                      if (!app.needDownload) {
+                        await AppHelper.deleteDirectory(appDir);
+                        setState(() {
+                          apps[app] = false;
+                          app.setNeedDownload(true);
+                        });
+                      } else {
+                        setState(() {
+                          isLoading = true;
+                        });
+                        await _downloadApp(app.link, app.name, app.checksum);
+                        setState(() {
+                          isLoading = false;
+                          app.setNeedDownload(false);
+                        });
+                      }
+                    },
+                    icon: Icon(
+                      _renderIconByConfig(
+                          apps.keys.elementAt(index).needDownload),
+                    ),
+                  ),
+                )
+              : SizedBox();
+        },
       ),
     );
   }

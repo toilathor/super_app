@@ -17,7 +17,7 @@ class AppConstant {
       isEnable: true,
       currentVersion: 1,
       version: 1,
-      checksum: "bada73ee34d3c56226b98dfe2fc30ae8",
+      checksum: "ea8a52e1104462cfcc45ddb001709ba9",
       needDownload: false,
     ),
     MiniApp(
@@ -39,7 +39,7 @@ class AppConstant {
       isEnable: true,
       currentVersion: 1,
       version: 1,
-      checksum: "5d0cf8b8ca22ad5ce63eee07a75d5610",
+      checksum: "c5a1281f94e194ba24c6d8040ee22a92",
       needDownload: true,
     ),
   ];
