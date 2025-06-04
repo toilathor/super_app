@@ -18,6 +18,7 @@ import 'package:flutter_super_app/ui/widgets/download_overlay.dart';
 import 'package:flutter_super_app/utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter_super_app/services/encrypt_service.dart';
 
 class MiniAppTile extends StatefulWidget {
   const MiniAppTile({super.key, required this.miniApp});
@@ -158,11 +159,19 @@ class _MiniAppTileState extends State<MiniAppTile> {
   Future<void> _onPressMiniApp() async {
     if (appReady == true) {
       var permissionFile = File('$appDir/permission.json');
-      if (await permissionFile.exists()) {
-        final permissionContent = await permissionFile.readAsString();
-        final permission =
-            permissionContent.isNotEmpty ? jsonDecode(permissionContent) : null;
-
+      var permissionFileEnc = File('$appDir/permission.json.enc');
+      
+      String? permissionContent;
+      
+      if (await permissionFileEnc.exists()) {
+        final encryptedContent = await permissionFileEnc.readAsString();
+        permissionContent = EncryptService.decryptString(encryptedContent);
+      } else if (await permissionFile.exists()) {
+        permissionContent = await permissionFile.readAsString();
+      }
+      
+      if (permissionContent != null && permissionContent.isNotEmpty) {
+        final permission = jsonDecode(permissionContent);
         if (permission != null) {
           final bool? result = await _showPermissionDialog(permission);
           if (result != true) {
@@ -170,6 +179,7 @@ class _MiniAppTileState extends State<MiniAppTile> {
           }
         }
       }
+      
       Navigator.pushNamed(
         context,
         AppRoutes.miniApp,
