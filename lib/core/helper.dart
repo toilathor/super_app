@@ -6,7 +6,11 @@ import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 
 class AppHelper {
-  static Future<String?> downloadWithDio(String url, String fileName) async {
+  static Future<String?> downloadWithDio(
+    String url,
+    String fileName, {
+    void Function(int received, int total)? onReceiveProgress,
+  }) async {
     final dio = Dio();
     final dir = await getApplicationDocumentsDirectory();
     final savePath = '${dir.path}/zips/$fileName';
@@ -14,11 +18,7 @@ class AppHelper {
     await dio.download(
       url,
       savePath,
-      onReceiveProgress: (received, total) {
-        if (total != -1) {
-          print('Đang tải: ${(received / total * 100).toStringAsFixed(0)}%');
-        }
-      },
+      onReceiveProgress: onReceiveProgress,
     );
 
     return savePath;

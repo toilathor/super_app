@@ -69,7 +69,7 @@ class EncryptService {
 
   static bool isEncryptTarget(String fileName) {
     return fileName.endsWith('.json.enc') ||
-           fileName.endsWith('.js.enc') ||
-           fileName.endsWith('.html.enc');
+        fileName.endsWith('.js.enc') ||
+        fileName.endsWith('.html.enc');
   }
 }

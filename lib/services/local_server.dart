@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+import 'package:flutter_super_app/core/constanst.dart';
 import 'package:flutter_super_app/services/encrypt_service.dart';
 import 'package:mime/mime.dart';
 import 'package:shelf/shelf.dart';
@@ -34,12 +36,15 @@ Future<HttpServer> startLocalWebServer(
       final path = request.url.path;
       final filePath = "$rootPath$route/$path";
       final filePathEnc = "$filePath.enc";
-      if (EncryptService.isEncryptTarget(filePathEnc) && await File(filePathEnc).exists()) {
+      if (EncryptService.isEncryptTarget(filePathEnc) &&
+          await File(filePathEnc).exists()) {
         // Nếu là file mã hóa, giải mã trước khi trả về
         final encryptedContent = await File(filePathEnc).readAsString();
         final decryptedContent = EncryptService.decryptString(encryptedContent);
-        final mimeType = customMimeTypeResolver.lookup(filePath) ?? 'text/plain';
-        return Response.ok(decryptedContent, headers: {'content-type': mimeType});
+        final mimeType =
+            customMimeTypeResolver.lookup(filePath) ?? 'text/plain';
+        return Response.ok(decryptedContent,
+            headers: {'content-type': mimeType});
       }
       // Nếu không, dùng static handler mặc định
       final handler = createStaticHandler(
@@ -53,7 +58,7 @@ Future<HttpServer> startLocalWebServer(
 
     // Bọc handler bằng middleware trước khi mount
     final protectedHandler = Pipeline()
-        .addMiddleware(_checkTokenForIndexOnly(validToken))
+        .addMiddleware(_checkTokenForIndexOnly())
         .addHandler(staticHandler);
 
     router.mount(route, protectedHandler);
@@ -65,11 +70,10 @@ Future<HttpServer> startLocalWebServer(
     port,
   );
 
-  print('Serving at http://localhost:$port');
   return server;
 }
 
-Middleware _checkTokenForIndexOnly(String validToken) {
+Middleware _checkTokenForIndexOnly() {
   return (Handler innerHandler) {
     return (Request request) async {
       final path = request.url.path;
@@ -94,9 +98,28 @@ Middleware _checkTokenForIndexOnly(String validToken) {
 
       // Nếu là index.html → kiểm tra token
       if (path.endsWith('index.html')) {
-        final token = request.headers['X-Internal-Token'];
-        if (token != validToken || token == null || token.isEmpty) {
-          return Response.forbidden('Access Denied: Missing or invalid token.');
+        final authHeader = request.headers['Authorization'];
+
+        if (authHeader == null || !authHeader.startsWith('Bearer ')) {
+          return Response.forbidden(
+            'Missing or malformed Authorization header',
+          );
+        }
+
+        final token = authHeader.substring(7);
+        try {
+          final jwt = JWT.verify(token, SecretKey(AppConstant.secretKey));
+          // Optionally add payload to request context
+          // final updatedRequest = request.change(context: {'jwt': jwt});
+          // return await innerHandler(updatedRequest);
+
+          return await innerHandler(request);
+        } on JWTExpiredException {
+          // TODO: Logout now
+          return Response.forbidden('Token expired');
+        } on JWTException catch (ex) {
+          // TODO: Logout now
+          return Response.forbidden('Invalid token: ${ex.message}');
         }
       }
 

@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:flutter_super_app/ui/home_screen.dart';
-import 'package:permission_handler/permission_handler.dart';
+
+import 'core/router.dart';
 
 WebViewEnvironment? webViewEnvironment;
 
@@ -23,5 +23,11 @@ Future main() async {
     await InAppWebViewController.setWebContentsDebuggingEnabled(kDebugMode);
   }
 
-  runApp(const MaterialApp(home: HomeScreen()));
+  runApp(
+    MaterialApp(
+      title: "Súp pờ Áp",
+      routes: AppRoutes.routes,
+      initialRoute: AppRoutes.root,
+    ),
+  );
 }
