@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_super_app/core/constanst.dart';
+import 'package:flutter_super_app/models/user_repository.dart';
 import 'package:flutter_super_app/services/secure_storage_service.dart';
 
 class InAppWebViewScreenArgument {
@@ -99,6 +102,11 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
                       );
                     }
                   },
+                  onReceivedHttpError: (controller, request, error) {
+                    if (error.statusCode == HttpStatus.unauthorized) {
+                      _showSessionExpiredDialog();
+                    }
+                  },
                   onConsoleMessage: (controller, consoleMessage) {
                     if (kDebugMode) {
                       print(consoleMessage);
@@ -118,5 +126,24 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
   void _onWebViewCreated(InAppWebViewController controller) async {
     webViewController = controller;
     await webViewController?.clearHistory();
+  }
+
+  void _showSessionExpiredDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Không cho tắt dialog khi chạm ngoài
+      builder: (context) => AlertDialog(
+        title: Text("Phiên đăng nhập đã kết thúc"),
+        content: Text("Vui lòng đăng nhập lại để tiếp tục sử dụng ứng dụng."),
+        actions: [
+          TextButton(
+            onPressed: () {
+              UserRepository.I.logout();
+            },
+            child: Text("Đăng xuất"),
+          ),
+        ],
+      ),
+    );
   }
 }

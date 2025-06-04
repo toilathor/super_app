@@ -4,6 +4,8 @@ import 'package:flutter_super_app/ui/inapp_webview_screen.dart';
 import 'package:flutter_super_app/ui/login_screen.dart';
 
 class AppRoutes {
+  static GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
   static const root = '/';
   static const home = '/home';
   static const login = '/login';
