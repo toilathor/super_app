@@ -36,7 +36,6 @@ class Utils {
           return true;
       }
     } catch (e) {
-      print('Error checking permission status: $e');
       return false;
     }
   }
@@ -76,7 +75,6 @@ class Utils {
           return true;
       }
     } catch (e) {
-      print('Error requesting permission: $e');
       return false;
     }
   }

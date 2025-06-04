@@ -3,6 +3,11 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_super_app/models/mini_app.dart';
 
 class AppConstant {
+  static const String secretKey = String.fromEnvironment(
+    "JWT_SECRET",
+    defaultValue: "FAIL_TOKEN",
+  );
+
   static List<MiniApp> apps = [
     MiniApp(
       id: "1",
@@ -13,7 +18,7 @@ class AppConstant {
       currentVersion: 1,
       version: 1,
       checksum: "ea8a52e1104462cfcc45ddb001709ba9",
-      needDownload: false,
+      needDownload: true,
       gitHash: "73e94b49bd93a15341ead8483f7b47d9da6ec068",
     ),
     MiniApp(
@@ -36,8 +41,8 @@ class AppConstant {
       isEnable: true,
       currentVersion: 1,
       version: 1,
-      checksum: "5d0cf8b8ca22ad5ce63eee07a75d5610",
-      needDownload: true,
+      checksum: "c5a1281f94e194ba24c6d8040ee22a92",
+      needDownload: false,
       gitHash: "8b060baa78c819a54b2e062b2d23c25d47757b61",
     ),
   ];
