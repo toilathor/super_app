@@ -115,11 +115,9 @@ Middleware _checkTokenForIndexOnly() {
 
           return await innerHandler(request);
         } on JWTExpiredException {
-          // TODO: Logout now
-          return Response.forbidden('Token expired');
+          return Response.unauthorized('Token expired');
         } on JWTException catch (ex) {
-          // TODO: Logout now
-          return Response.forbidden('Invalid token: ${ex.message}');
+          return Response.unauthorized('Invalid token: ${ex.message}');
         }
       }
 
