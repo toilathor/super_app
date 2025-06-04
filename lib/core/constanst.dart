@@ -17,7 +17,7 @@ class AppConstant {
       isEnable: true,
       currentVersion: 1,
       version: 1,
-      checksum: "ea8a52e1104462cfcc45ddb001709ba9",
+      checksum: "c8d92672226176e3477a9793f1581ab0",
       needDownload: true,
       gitHash: "73e94b49bd93a15341ead8483f7b47d9da6ec068",
     ),
