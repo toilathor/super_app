@@ -91,8 +91,9 @@ class _MiniAppTileState extends State<MiniAppTile> {
                             opacity: downloading || appReady != true
                                 ? max(progressValue, 0.5)
                                 : 1,
-                            child: FlutterLogo(
-                              size: 64,
+                            child: Hero(
+                              tag: widget.miniApp.name,
+                              child: FlutterLogo(size: 64),
                             ),
                           ),
                           if (appReady == false && !downloading)
