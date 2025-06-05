@@ -83,8 +83,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    print(apps);
-
     setState(() {
       isLoading = false;
       // apps.removeWhere((key, value) => !value);

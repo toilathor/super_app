@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_super_app/core/constanst.dart';
+import 'package:flutter_super_app/core/logger.dart';
 import 'package:flutter_super_app/models/user_repository.dart';
 import 'package:flutter_super_app/services/secure_storage_service.dart';
 
@@ -108,9 +109,7 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
                     }
                   },
                   onConsoleMessage: (controller, consoleMessage) {
-                    if (kDebugMode) {
-                      print(consoleMessage);
-                    }
+                    AppLogger.d(consoleMessage);
                   },
                 );
               } else {

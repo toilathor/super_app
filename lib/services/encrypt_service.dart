@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter_super_app/core/logger.dart';
 import 'package:pointycastle/export.dart';
 
 class EncryptService {
@@ -47,7 +48,7 @@ class EncryptService {
       final encryptedPath = '$filePath.enc';
       await File(encryptedPath).writeAsString(encrypted);
       await file.delete(); // Xóa file gốc
-      print('Đã mã hóa file: $encryptedPath');
+      AppLogger.i('Đã mã hóa file: $encryptedPath');
     } catch (e) {
       // Không phải file text, bỏ qua
       return;
