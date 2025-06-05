@@ -55,7 +55,10 @@ class _MiniAppTileState extends State<MiniAppTile> {
             onPressed: () async {
               Navigator.pop(context);
               await AppHelper.deleteDirectory(appDir);
-              _checkApp();
+              setState(() {
+                appReady = false;
+              });
+              // _checkApp();
             },
             isDestructiveAction: true,
             child: Text("Delete"),
