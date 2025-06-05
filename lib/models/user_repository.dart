@@ -1,12 +1,27 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_super_app/core/router.dart';
+import 'package:flutter_super_app/services/secure_storage_service.dart';
+
 class UserRepository {
   UserRepository._();
 
   static UserRepository? _instance;
 
-  static UserRepository get instance => _instance ??= UserRepository._();
+  static UserRepository get I => _instance ??= UserRepository._();
 
-  // ..... VALUES ..............................................................
+  // ..... TODO: VALUES ........................................................
   String? token;
 
-// ..... GETTERS/SETTERS .....................................................
+  // ..... TODO: GETTERS/SETTERS .................................................
+
+  // ..... TODO: METHODS .........................................................
+  Future<void> logout() async {
+    Navigator.pushNamedAndRemoveUntil(
+      AppRoutes.navigatorKey.currentContext!,
+      AppRoutes.login,
+      (route) => false,
+    );
+
+    await SecureStorageService.I.deleteToken();
+  }
 }

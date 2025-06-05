@@ -3,10 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_super_app/core/constanst.dart';
 import 'package:flutter_super_app/core/helper.dart';
-import 'package:flutter_super_app/core/router.dart';
 import 'package:flutter_super_app/models/mini_app.dart';
+import 'package:flutter_super_app/models/user_repository.dart';
 import 'package:flutter_super_app/services/local_server.dart';
-import 'package:flutter_super_app/services/secure_storage_service.dart';
 import 'package:flutter_super_app/ui/widgets/mini_app_tile.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -39,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.logout),
-            onPressed: _logout,
+            onPressed: UserRepository.I.logout,
           ),
         ],
       ),
@@ -84,8 +83,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    print(apps);
-
     setState(() {
       isLoading = false;
       // apps.removeWhere((key, value) => !value);
@@ -99,16 +96,6 @@ class _HomeScreenState extends State<HomeScreen> {
       routes: routes,
       validToken: userToken,
     );
-  }
-
-  Future<void> _logout() async {
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      AppRoutes.login,
-      (route) => false,
-    );
-
-    await SecureStorageService.I.deleteToken();
   }
 
   @override

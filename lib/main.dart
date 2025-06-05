@@ -32,6 +32,7 @@ Future main() async {
 
   runApp(
     MaterialApp(
+      navigatorKey: AppRoutes.navigatorKey,
       title: "Súp pờ Áp",
       routes: AppRoutes.routes,
       initialRoute: isRooted ? AppRoutes.rootedDevicePage : AppRoutes.root,

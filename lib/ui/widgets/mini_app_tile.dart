@@ -94,8 +94,9 @@ class _MiniAppTileState extends State<MiniAppTile> {
                             opacity: downloading || appReady != true
                                 ? max(progressValue, 0.5)
                                 : 1,
-                            child: FlutterLogo(
-                              size: 64,
+                            child: Hero(
+                              tag: widget.miniApp.name,
+                              child: FlutterLogo(size: 64),
                             ),
                           ),
                           if (appReady == false && !downloading)
@@ -228,7 +229,9 @@ class _MiniAppTileState extends State<MiniAppTile> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final currentHash = data['commit']['sha'];
-        print('sha of ${app.name} is $currentHash');
+
+        AppLogger.i('sha of ${app.name} is $currentHash');
+
         if (currentHash != app.gitHash) {
           setState(() {
             downloading = true;
