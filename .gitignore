@@ -44,3 +44,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 /.env
+/assets/ssl/server.crt
+/assets/ssl/server.csr
+/assets/ssl/server.key

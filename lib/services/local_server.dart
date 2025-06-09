@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_super_app/core/constanst.dart';
 import 'package:flutter_super_app/services/encrypt_service.dart';
 import 'package:mime/mime.dart';
@@ -68,7 +69,7 @@ Future<HttpServer> startLocalWebServer(
     router.call,
     'localhost',
     port,
-  );
+      securityContext: await createSecurityContext());
 
   return server;
 }
@@ -125,4 +126,17 @@ Middleware _checkTokenForIndexOnly() {
       return await innerHandler(request);
     };
   };
+}
+
+Future<SecurityContext> createSecurityContext() async {
+  final String certificatePem =
+      await rootBundle.loadString('assets/ssl/server.crt');
+  final String privateKeyPem =
+      await rootBundle.loadString('assets/ssl/server.key');
+  // Tạo SecurityContext
+  final SecurityContext securityContext = SecurityContext()
+    ..useCertificateChainBytes(certificatePem.codeUnits)
+    ..usePrivateKeyBytes(privateKeyPem.codeUnits);
+
+  return securityContext;
 }

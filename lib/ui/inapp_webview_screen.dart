@@ -52,7 +52,7 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
                   return InAppWebView(
                     initialUrlRequest: URLRequest(
                       url: WebUri.uri(Uri.parse(
-                        'http://localhost:$_port/${widget.argument?.appName}/index.html',
+                        'https://localhost:$_port/${widget.argument?.appName}/index.html',
                       )),
                       headers: {"Authorization": 'Bearer ${snapshot.data}'},
                       httpShouldUsePipelining: true,
@@ -102,7 +102,7 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
                         await controller.postWebMessage(
                           message:
                               WebMessage(data: "capturePort", ports: [port2!]),
-                          targetOrigin: WebUri("http://localhost:8080"),
+                          targetOrigin: WebUri("https://localhost:8080"),
                         );
                       }
                     },
@@ -113,6 +113,49 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
                     },
                     onConsoleMessage: (controller, consoleMessage) {
                       AppLogger.d(consoleMessage);
+                    },
+                    onReceivedServerTrustAuthRequest:
+                        (controller, challenge) async {
+                      // Đây là nơi bạn kiểm tra chứng chỉ
+                      // challenge.protectionSpace.host sẽ là 'localhost' hoặc '127.0.0.1'
+                      // challenge.protectionSpace.port sẽ là 8080
+
+                      // Trong một ứng dụng thực tế, bạn sẽ kiểm tra
+                      // Certificate chain của challenge.
+                      // Ví dụ, bạn sẽ load chứng chỉ gốc của bạn (server.crt)
+                      // và kiểm tra xem chứng chỉ server.crt có nằm trong chuỗi được trình bày bởi server không.
+
+                      // Để đơn giản hóa cho localhost và chứng chỉ tự ký,
+                      // bạn có thể chấp nhận nếu host và port khớp.
+                      // TUY NHIÊN, CÁCH NÀY KHÔNG THỰC SỰ KIỂM TRA CHỨNG CHỈ!
+                      // Nó chỉ chấp nhận nếu host/port đúng.
+                      // ĐỂ KIỂM TRA CHỨNG CHỈ: bạn cần so sánh fingerprint (SHA-256) của chứng chỉ
+                      // nhận được với fingerprint của chứng chỉ bạn đã tạo.
+
+                      // Lấy fingerprint của chứng chỉ đã tạo (server.crt)
+                      // Bạn có thể tính toán fingerprint này trước và lưu nó vào một biến const
+                      // Ví dụ: final String expectedCertSha256Fingerprint = 'A1B2C3D4...'; // Cần tính toán
+                      // Bạn có thể dùng openssl để tính toán:
+                      // openssl x509 -in server.crt -noout -fingerprint -sha256
+
+                      // Để đơn giản hóa DEBUG, có thể chấp nhận tất cả cho localhost (KHÔNG NÊN TRONG PROD)
+                      if (challenge.protectionSpace.host == 'localhost' ||
+                          challenge.protectionSpace.host == '127.0.0.1') {
+                        // Trong production, bạn phải kiểm tra SHA-256 fingerprint của chứng chỉ nhận được
+                        // và so sánh với fingerprint của chứng chỉ server.crt bạn đã tạo.
+                        // Nếu khớp, bạn trả về Allow.
+
+                        // Ví dụ:
+                        // final receivedCert = challenge.iosCredential?.certificates?.first; // iOS
+                        // final receivedCert = challenge.androidCertificate; // Android
+
+                        // Kiểm tra và chấp nhận (cần logic mạnh hơn ở đây)
+                        return ServerTrustAuthResponse(
+                            action: ServerTrustAuthResponseAction.PROCEED);
+                      }
+
+                      return ServerTrustAuthResponse(
+                          action: ServerTrustAuthResponseAction.CANCEL);
                     },
                   );
                 } else {
@@ -175,7 +218,7 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
     final uri = request.url;
     final domain = '${uri.scheme}://${uri.host}';
 
-    if (uri.rawValue.startsWith('http://localhost:8080')) {
+    if (uri.rawValue.startsWith('https://localhost:8080')) {
       return null; // KHÔNG intercept → load bình thường
     }
 
