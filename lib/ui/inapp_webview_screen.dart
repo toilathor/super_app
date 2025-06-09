@@ -111,6 +111,10 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
                         _showSessionExpiredDialog();
                       }
                     },
+                    onReceivedError: (controller, request, error) {
+                      AppLogger.e(
+                          'WebView Error: ${error.description} for URL: ${request.url}');
+                    },
                     onConsoleMessage: (controller, consoleMessage) {
                       AppLogger.d(consoleMessage);
                     },
@@ -156,6 +160,12 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
 
                       return ServerTrustAuthResponse(
                           action: ServerTrustAuthResponseAction.CANCEL);
+                    },
+                    onCreateWindow: (controller, createWindowRequest) async {
+                      AppLogger.d(
+                          'WebView requested to create new window: ${createWindowRequest.request.url}');
+                      // Mặc định, bạn nên từ chối việc tạo cửa sổ mới để tăng cường bảo mật
+                      return false; // Từ chối việc tạo cửa sổ mới
                     },
                   );
                 } else {

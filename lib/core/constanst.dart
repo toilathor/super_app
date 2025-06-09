@@ -64,6 +64,18 @@ class AppConstant {
     clearCache: true,
     clearSessionCache: true,
     disableContextMenu: true,
+    mixedContentMode: MixedContentMode.MIXED_CONTENT_NEVER_ALLOW,
+    // Không cho phép HTTP trên trang HTTPS
+    supportMultipleWindows: false,
+    // Ngăn chặn việc mở cửa sổ mới (pop-ups)
+    blockNetworkLoads: false,
+    // Không chặn tải tài nguyên qua mạng (cần cho mini app của bạn)
+    domStorageEnabled: false,
+    // Tắt DOM Storage (LocalStorage, SessionStorage) nếu bạn không muốn Mini App lưu trữ cục bộ
+    databaseEnabled: false,
+    // Tắt WebSQL Database
+    cacheMode: CacheMode.LOAD_NO_CACHE,
+    // Không sử dụng cache
 
     // Giới hạn quyền truy cập
     allowFileAccess: false,
@@ -91,6 +103,13 @@ class AppConstant {
     // Zoom
     supportZoom: false,
     builtInZoomControls: false,
+
+    allowsPictureInPictureMediaPlayback: false,
+    limitsNavigationsToAppBoundDomains:
+        true, // Chỉ cho phép điều hướng đến các domain đã cấu hình cho app (khuyến nghị cho các apps có domain cố định)
+    // Các tùy chọn khác:
+    // applePayAPIEnabled: false, // Tắt Apple Pay API nếu không cần thiết
+    // isFraudulentWebsiteWarningEnabled: true, // Hiển thị cảnh báo trang web lừa đảo
   );
 
   static const Map<String, dynamic> apiDomains = {

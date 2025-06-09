@@ -59,7 +59,9 @@ Future<HttpServer> startLocalWebServer(
 
     // Bọc handler bằng middleware trước khi mount
     final protectedHandler = Pipeline()
+        .addMiddleware(logRequests())
         .addMiddleware(_checkTokenForIndexOnly())
+        // .addMiddleware(_addCspHeaderMiddleware())
         .addHandler(staticHandler);
 
     router.mount(route, protectedHandler);
@@ -69,7 +71,8 @@ Future<HttpServer> startLocalWebServer(
     router.call,
     'localhost',
     port,
-      securityContext: await createSecurityContext());
+    securityContext: await createSecurityContext(),
+  );
 
   return server;
 }
@@ -140,3 +143,38 @@ Future<SecurityContext> createSecurityContext() async {
 
   return securityContext;
 }
+
+// Middleware _addCspHeaderMiddleware() {
+//   return (Handler innerHandler) {
+//     return (Request request) async {
+//       final response = await innerHandler(request);
+//
+//       // Chỉ thêm CSP header cho các tài nguyên của Mini App (ví dụ: index.html, main.dart.js)
+//       // Nếu bạn muốn áp dụng cho tất cả các phản hồi, hãy bỏ if statement.
+//       // Tuy nhiên, việc áp dụng cho tất cả có thể không cần thiết hoặc gây ra vấn đề
+//       // nếu Shelf server của bạn phục vụ các loại tài nguyên khác không thuộc Mini App.
+//       if (request.url.path == '/' ||
+//           request.url.path.endsWith('.html') ||
+//           request.url.path.endsWith('.js') ||
+//           request.url.path.endsWith('.css')) {
+//         return response.change(headers: {
+//           'Content-Security-Policy':
+//               "default-src 'self' https://localhost:8080 https://www.gstatic.com; "
+//                   "script-src 'self' 'wasm-unsafe-eval' https://localhost:8080 https://www.gstatic.com; "
+//                   "style-src 'self' 'unsafe-inline' https://localhost:8080 https://fonts.googleapis.com; "
+//                   "img-src 'self' data: https://localhost:8080; "
+//                   "connect-src 'self' https://localhost:8080 https://www.gstatic.com; "
+//                   "font-src 'self' https://localhost:8080 https://fonts.gstatic.com; "
+//                   "object-src 'none'; "
+//                   "base-uri 'self'; "
+//                   "form-action 'self'; "
+//                   "frame-ancestors 'none'; "
+//                   "upgrade-insecure-requests;",
+//           'X-Content-Type-Options': 'nosniff',
+//           'X-Frame-Options': 'DENY',
+//         });
+//       }
+//       return response;
+//     };
+//   };
+// }
