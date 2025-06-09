@@ -6,6 +6,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_super_app/core/constanst.dart';
 import 'package:flutter_super_app/core/logger.dart';
 import 'package:flutter_super_app/models/user_repository.dart';
+import 'package:flutter_super_app/services/api_domain.dart';
 import 'package:flutter_super_app/services/secure_storage_service.dart';
 
 class InAppWebViewScreenArgument {
@@ -64,10 +65,7 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
                       );
                     },
                     initialSettings: AppConstant.settings,
-                    shouldInterceptRequest: (controller, request) async {
-                      // Cho phép hoặc chặn request tại đây (tùy theo domain/token)
-                      return null;
-                    },
+                    shouldInterceptRequest: _shouldInterceptRequest,
                     shouldOverrideUrlLoading:
                         (controller, navigationAction) async {
                       final uri = navigationAction.request.url!;
@@ -170,5 +168,33 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
         ],
       ),
     );
+  }
+
+  Future<WebResourceResponse?> _shouldInterceptRequest(
+      InAppWebViewController controller, WebResourceRequest request) async {
+    final uri = request.url;
+    final domain = '${uri.scheme}://${uri.host}';
+
+    if (uri.rawValue.startsWith('http://localhost:8080')) {
+      return null; // KHÔNG intercept → load bình thường
+    }
+
+    final token = ApiDomainService.I.createMiniAppAccessToken(
+      miniAppId: AppConstant.jwtSecretKey,
+      allowedDomains: AppConstant.apiDomains['3'],
+    );
+
+    final verified = ApiDomainService.I.verifyDomainFromToken(token, domain);
+
+    if (!verified) {
+      AppLogger.e(domain);
+      return WebResourceResponse(
+        contentType: 'text/plain',
+        data: Uint8List.fromList('Blocked by domain policy'.codeUnits),
+        statusCode: 403,
+      );
+    }
+
+    return null; // allow
   }
 }

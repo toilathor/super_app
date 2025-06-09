@@ -3,9 +3,13 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_super_app/models/mini_app.dart';
 
 class AppConstant {
-  static const String secretKey = String.fromEnvironment(
+  static const String jwtSecretKey = String.fromEnvironment(
     "JWT_SECRET",
     defaultValue: "FAIL_TOKEN",
+  );
+
+  static const String apiDomainSecretKey = String.fromEnvironment(
+    "API_DOMAIN_SECRET_KEY",
   );
 
   static List<MiniApp> apps = [
@@ -88,4 +92,14 @@ class AppConstant {
     supportZoom: false,
     builtInZoomControls: false,
   );
+
+  static const Map<String, dynamic> apiDomains = {
+    '3': [
+      "https://6695f99f0312447373c0957c.mockapi.io",
+      "https://fonts.gstatic.com",
+      "https://avatars.githubusercontent.com",
+      "https://cdn.jsdelivr.net",
+      "https://www.gstatic.com",
+    ],
+  };
 }

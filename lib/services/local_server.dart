@@ -108,7 +108,7 @@ Middleware _checkTokenForIndexOnly() {
 
         final token = authHeader.substring(7);
         try {
-          final jwt = JWT.verify(token, SecretKey(AppConstant.secretKey));
+          JWT.verify(token, SecretKey(AppConstant.jwtSecretKey));
           // Optionally add payload to request context
           // final updatedRequest = request.change(context: {'jwt': jwt});
           // return await innerHandler(updatedRequest);

@@ -43,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     // Replace AppConstant.secretKey with your actual secret
     return jwt.sign(
-      SecretKey(AppConstant.secretKey),
+      SecretKey(AppConstant.jwtSecretKey),
       algorithm: JWTAlgorithm.HS256,
     );
   }
